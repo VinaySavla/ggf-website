@@ -1,103 +1,101 @@
+import HeroSection from "@/components/HeroSection";
+import SponsorCarousel from "@/components/SponsorCarousel";
+import UpcomingEvents from "@/components/UpcomingEvents";
+import Link from "next/link";
 import Image from "next/image";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <>
+      <HeroSection />
+      <SponsorCarousel />
+      
+      {/* About GGF Section */}
+      <section className="py-16 bg-white">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-6 mb-6">
+              <Image 
+                src="/GGF.png" 
+                alt="GGF Logo" 
+                width={80} 
+                height={80}
+                className="object-contain"
+              />
+              <span className="text-2xl text-gray-400">×</span>
+              <Image 
+                src="/GCS.png" 
+                alt="GSC Logo" 
+                width={80} 
+                height={80}
+                className="object-contain"
+              />
+            </div>
+            <h2 className="text-4xl font-bold text-gray-800 mb-4">About Godhra Graduates Forum</h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              GGF is a community trust dedicated to fostering growth, education, and fellowship in Godhra and surrounding areas.
+              <br />
+              <span className="text-sm text-primary font-semibold mt-2 block">In collaboration with Godhra Sports Club</span>
+            </p>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-8 text-center hover:shadow-lg transition">
+              <div className="text-5xl mb-4">📚</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Education</h3>
+              <p className="text-gray-600">Organizing quiz competitions, workshops, and educational programs to promote learning and knowledge sharing.</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-8 text-center hover:shadow-lg transition">
+              <div className="text-5xl mb-4">🤝</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Fellowship</h3>
+              <p className="text-gray-600">Building strong community bonds through social gatherings, cultural events, and networking opportunities.</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-8 text-center hover:shadow-lg transition">
+              <div className="text-5xl mb-4">🏥</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Medical</h3>
+              <p className="text-gray-600">Supporting health initiatives, blood donation camps, and medical awareness programs for the community.</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-8 text-center hover:shadow-lg transition">
+              <div className="text-5xl mb-4">⚽</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Sports</h3>
+              <p className="text-gray-600">Hosting cricket tournaments, ludo championships, and other sporting events in collaboration with Godhra Sports Club.</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-8 text-center hover:shadow-lg transition">
+              <div className="text-5xl mb-4">🌱</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Environment</h3>
+              <p className="text-gray-600">Promoting environmental awareness through tree plantation drives and sustainability initiatives.</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-8 text-center hover:shadow-lg transition">
+              <div className="text-5xl mb-4">🌟</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">Community</h3>
+              <p className="text-gray-600">Strengthening our community through various social initiatives and support programs for all age groups.</p>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      <UpcomingEvents />
+
+      {/* Call to Action */}
+      <section className="bg-gradient-to-r from-primary to-purple-900 text-white py-16">
+        <div className="container-custom text-center">
+          <h2 className="text-4xl font-bold mb-6">Join Our Community</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">Be part of something bigger. Participate in our events, volunteer, or become a sponsor.</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/tournament" className="bg-white text-primary px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition">
+              Register for Tournament
+            </Link>
+            <Link href="/sponsors" className="bg-accent text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition">
+              Become a Sponsor
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
