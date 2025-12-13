@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Users, Trophy, Plus, UserCheck, UserX } from "lucide-react";
+import { Users, Trophy, Plus, UserCheck, UserX, Calendar } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import PlayerActions from "@/components/admin/PlayerActions";
 import AddPlayerButton from "@/components/admin/AddPlayerButton";
@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 async function getPlayers() {
-  return prisma.masterPlayer.findMany({
+  const players = await prisma.masterPlayer.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       user: {
@@ -28,6 +28,38 @@ async function getPlayers() {
       },
     },
   });
+
+  // Get all user IDs that have player profiles
+  const userIds = players.filter(p => p.userId).map(p => p.userId);
+  
+  // Count registrations for each user
+  if (userIds.length > 0) {
+    const registrations = await prisma.registration.findMany({
+      where: {
+        paymentStatus: "paid",
+      },
+      select: {
+        userData: true,
+      },
+    });
+
+    // Create a map of userId -> registration count
+    const registrationCounts = {};
+    registrations.forEach(reg => {
+      const userId = reg.userData?.userId;
+      if (userId && userIds.includes(userId)) {
+        registrationCounts[userId] = (registrationCounts[userId] || 0) + 1;
+      }
+    });
+
+    // Attach registration count to each player
+    return players.map(player => ({
+      ...player,
+      eventCount: player.userId ? (registrationCounts[player.userId] || 0) : 0,
+    }));
+  }
+
+  return players.map(player => ({ ...player, eventCount: 0 }));
 }
 
 async function getUsersWithoutPlayers() {
@@ -76,7 +108,8 @@ export default async function PlayersAdminPage() {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Player ID</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Account</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Tournaments</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Events</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Teams</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Stats</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Joined</th>
                 <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">Actions</th>
@@ -125,6 +158,12 @@ export default async function PlayersAdminPage() {
                         Not Linked
                       </span>
                     )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      {player.eventCount}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center text-sm text-gray-600">
