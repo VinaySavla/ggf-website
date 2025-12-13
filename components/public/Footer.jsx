@@ -71,7 +71,7 @@ export default function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-primary" />
-                <span>contact@ggf.com</span>
+                <span>godharagraduatesforum@gmail.com</span>
               </li>
             </ul>
             
@@ -83,9 +83,9 @@ export default function Footer() {
               <a href="#" className="text-gray-400 hover:text-primary transition">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-primary transition">
+              {/* <a href="#" className="text-gray-400 hover:text-primary transition">
                 <Twitter className="w-5 h-5" />
-              </a>
+              </a> */}
               <a href="#" className="text-gray-400 hover:text-red-500 transition">
                 <Youtube className="w-5 h-5" />
               </a>

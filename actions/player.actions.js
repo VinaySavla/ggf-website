@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { sendWelcomeEmail } from "@/lib/mail";
+import { deleteFileFromStorage } from "@/lib/storage";
 
 // Generate Player ID like "GGF-GSC-YYMM-XXXX"
 async function generatePlayerId() {
@@ -136,9 +137,29 @@ export async function deletePlayer(id) {
       return { error: "Unauthorized" };
     }
 
+    // Get player first to get photo URL
+    const player = await prisma.masterPlayer.findUnique({
+      where: { id },
+      include: { user: { select: { photo: true } } },
+    });
+
+    if (!player) {
+      return { error: "Player not found" };
+    }
+
+    // Delete from database
     await prisma.masterPlayer.delete({
       where: { id },
     });
+
+    // Delete player photo from storage if exists
+    if (player.photo) {
+      await deleteFileFromStorage(player.photo);
+    }
+    // Also delete user photo if linked
+    if (player.user?.photo) {
+      await deleteFileFromStorage(player.user.photo);
+    }
 
     revalidatePath("/admin/players");
     return { success: true };

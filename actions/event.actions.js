@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/utils";
 import { sendEventRegistrationEmail } from "@/lib/mail";
+import { deleteFileFromStorage, deleteMultipleFilesFromStorage } from "@/lib/storage";
 
 export async function createEvent(data) {
   try {
@@ -151,9 +152,48 @@ export async function deleteEvent(id) {
       return { error: "Unauthorized" };
     }
 
+    // Get event with all registrations to collect files to delete
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: { registrations: true },
+    });
+
+    if (!event) {
+      return { error: "Event not found" };
+    }
+
+    // Collect all file URLs
+    const filesToDelete = [];
+    
+    // Add UPI QR image
+    if (event.upiQrImage) {
+      filesToDelete.push(event.upiQrImage);
+    }
+    
+    // Add files from all registrations
+    for (const reg of event.registrations) {
+      if (reg.paymentSs) {
+        filesToDelete.push(reg.paymentSs);
+      }
+      // Check userData for uploaded files
+      if (reg.userData && typeof reg.userData === 'object') {
+        Object.values(reg.userData).forEach(value => {
+          if (typeof value === 'string' && value.startsWith('/') && value.match(/\.(jpg|jpeg|png|gif|webp|pdf|doc|docx)$/i)) {
+            filesToDelete.push(value);
+          }
+        });
+      }
+    }
+
+    // Delete from database
     await prisma.event.delete({
       where: { id },
     });
+
+    // Delete files from storage
+    if (filesToDelete.length > 0) {
+      await deleteMultipleFilesFromStorage(filesToDelete);
+    }
 
     return { success: true };
   } catch (error) {
@@ -170,7 +210,7 @@ export async function submitRegistration(data) {
       return { error: "Please login to register for events" };
     }
 
-    const { eventId, userData } = data;
+    const { eventId, userData, transactionId, paymentScreenshot } = data;
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -178,6 +218,16 @@ export async function submitRegistration(data) {
 
     if (!event || !event.isActive) {
       return { error: "Event not found or no longer active" };
+    }
+
+    // For paid events, require payment proof
+    if (event.isPaid) {
+      if (!transactionId || !transactionId.trim()) {
+        return { error: "Transaction ID is required for paid events" };
+      }
+      if (!paymentScreenshot) {
+        return { error: "Payment screenshot is required for paid events" };
+      }
     }
 
     // Get full user data including mobile
@@ -223,6 +273,11 @@ export async function submitRegistration(data) {
           mobile: user.mobile || userData.mobile,
         },
         paymentStatus: event.isPaid ? "pending" : "paid",
+        // Include payment info for paid events
+        ...(event.isPaid && {
+          transactionId: transactionId,
+          paymentSs: paymentScreenshot,
+        }),
       },
     });
 

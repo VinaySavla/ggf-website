@@ -7,7 +7,7 @@ async function main() {
   console.log('🌱 Starting database seeding...');
 
   // Create Super Admin
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@ggf.com';
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@godhragraduatesforum.in';
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'admin123';
   
   const hashedPassword = await bcrypt.hash(superAdminPassword, 12);

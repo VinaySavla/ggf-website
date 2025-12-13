@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { generateSlug } from "@/lib/utils";
+import { deleteFileFromStorage, deleteMultipleFilesFromStorage } from "@/lib/storage";
 
 // ==================== COLLECTIONS ====================
 
@@ -129,9 +130,29 @@ export async function deleteCollection(id) {
       return { error: "Unauthorized" };
     }
 
+    // Get all images in the collection first
+    const collection = await prisma.galleryCollection.findUnique({
+      where: { id },
+      include: { images: true },
+    });
+
+    if (!collection) {
+      return { error: "Collection not found" };
+    }
+
+    // Collect all image URLs to delete
+    const filesToDelete = collection.images.map((img) => img.imageUrl);
+    if (collection.coverImage) {
+      filesToDelete.push(collection.coverImage);
+    }
+
+    // Delete from database first
     await prisma.galleryCollection.delete({
       where: { id },
     });
+
+    // Delete files from storage
+    await deleteMultipleFilesFromStorage(filesToDelete);
 
     revalidatePath("/admin/gallery");
     revalidatePath("/gallery");
@@ -259,9 +280,22 @@ export async function deleteImage(id) {
       return { error: "Unauthorized" };
     }
 
+    // Get the image first to get the URL
+    const image = await prisma.galleryImage.findUnique({
+      where: { id },
+    });
+
+    if (!image) {
+      return { error: "Image not found" };
+    }
+
+    // Delete from database
     await prisma.galleryImage.delete({
       where: { id },
     });
+
+    // Delete file from storage
+    await deleteFileFromStorage(image.imageUrl);
 
     revalidatePath("/admin/gallery");
     revalidatePath("/gallery");
@@ -279,9 +313,19 @@ export async function deleteMultipleImages(ids) {
       return { error: "Unauthorized" };
     }
 
+    // Get all images first to get URLs
+    const images = await prisma.galleryImage.findMany({
+      where: { id: { in: ids } },
+    });
+
+    // Delete from database
     await prisma.galleryImage.deleteMany({
       where: { id: { in: ids } },
     });
+
+    // Delete files from storage
+    const fileUrls = images.map((img) => img.imageUrl);
+    await deleteMultipleFilesFromStorage(fileUrls);
 
     revalidatePath("/admin/gallery");
     revalidatePath("/gallery");

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { Loader2, LogIn, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
+import { Loader2, LogIn, Upload, X, FileText, Image as ImageIcon, CreditCard } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { submitRegistration } from "@/actions/event.actions";
@@ -18,6 +18,14 @@ export default function RegistrationForm({ event }) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({});
   const [uploadingFields, setUploadingFields] = useState({});
+  
+  // Payment fields for paid events
+  const [paymentData, setPaymentData] = useState({
+    transactionId: "",
+    paymentScreenshot: null,
+  });
+  const [paymentPreviewUrl, setPaymentPreviewUrl] = useState(null);
+  const [uploadingPayment, setUploadingPayment] = useState(false);
 
   // Parse form schema
   const formSchema = typeof event.formSchema === 'string' 
@@ -111,6 +119,43 @@ export default function RegistrationForm({ event }) {
     setFormData(prev => ({ ...prev, [fieldId]: '' }));
   };
 
+  // Handle payment screenshot upload
+  const handlePaymentScreenshotUpload = async (file) => {
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setUploadingPayment(true);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('folder', 'payments');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      setPaymentData(prev => ({ ...prev, paymentScreenshot: result.url }));
+      setPaymentPreviewUrl(URL.createObjectURL(file));
+      toast.success('Payment screenshot uploaded');
+    } catch (error) {
+      toast.error(error.message || 'Failed to upload screenshot');
+    } finally {
+      setUploadingPayment(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -118,6 +163,18 @@ export default function RegistrationForm({ event }) {
       toast.error("Please login to register for events");
       router.push(`/login?callbackUrl=/events/${event.slug}`);
       return;
+    }
+
+    // Validate payment fields for paid events
+    if (event.isPaid) {
+      if (!paymentData.transactionId.trim()) {
+        toast.error("Please enter the Transaction ID / UTR Number");
+        return;
+      }
+      if (!paymentData.paymentScreenshot) {
+        toast.error("Please upload the payment screenshot");
+        return;
+      }
     }
 
     // Ensure mandatory fields are filled from session
@@ -135,18 +192,18 @@ export default function RegistrationForm({ event }) {
       const result = await submitRegistration({
         eventId: event.id,
         userData: finalFormData,
+        // Include payment data for paid events
+        ...(event.isPaid && {
+          transactionId: paymentData.transactionId,
+          paymentScreenshot: paymentData.paymentScreenshot,
+        }),
       });
 
       if (result.error) {
         toast.error(result.error);
       } else {
-        if (event.isPaid) {
-          toast.success("Registration submitted! Please complete payment.");
-          router.push(`/events/${event.slug}/payment?registrationId=${result.registrationId}`);
-        } else {
-          toast.success("Registration successful!");
-          router.push("/events");
-        }
+        toast.success("Registration successful! Payment will be verified shortly.");
+        router.push("/events");
       }
     } catch (error) {
       toast.error("Failed to submit registration");
@@ -448,6 +505,117 @@ export default function RegistrationForm({ event }) {
         );
       })}
 
+      {/* Payment Section for Paid Events */}
+      {event.isPaid && (
+        <div className="border-t border-gray-200 pt-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800 mb-6">
+            <p className="font-medium">⚠️ Payment Required</p>
+            <p className="mt-1">Please complete the payment before submitting your registration.</p>
+          </div>
+
+          {/* UPI QR Code */}
+          {event.upiQrImage && (
+            <div className="bg-gray-50 rounded-lg p-6 mb-6 text-center">
+              <p className="text-sm text-gray-600 mb-4">Scan the QR code to pay via UPI</p>
+              <div className="relative w-48 h-48 mx-auto mb-4 bg-white rounded-lg p-2">
+                <Image
+                  src={event.upiQrImage}
+                  alt="UPI QR Code"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <p className="text-xs text-gray-500">After payment, enter the transaction details below</p>
+            </div>
+          )}
+
+          {/* Transaction ID */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Transaction ID / UTR Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={paymentData.transactionId}
+              onChange={(e) => setPaymentData(prev => ({ ...prev, transactionId: e.target.value }))}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+              placeholder="Enter UPI transaction ID or UTR number"
+              required
+            />
+          </div>
+
+          {/* Payment Screenshot */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Screenshot <span className="text-red-500">*</span>
+            </label>
+            {paymentData.paymentScreenshot ? (
+              <div className="relative border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-20 h-20 rounded-lg overflow-hidden border bg-white">
+                    <Image
+                      src={paymentPreviewUrl || paymentData.paymentScreenshot}
+                      alt="Payment screenshot"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-700">Payment proof uploaded</p>
+                    <p className="text-xs text-green-600 mt-1">✓ Ready to submit</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentData(prev => ({ ...prev, paymentScreenshot: null }));
+                      setPaymentPreviewUrl(null);
+                    }}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
+                    title="Remove screenshot"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition ${uploadingPayment ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary hover:bg-gray-50'}`}>
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  {uploadingPayment ? (
+                    <>
+                      <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+                      <p className="text-sm text-primary">Uploading...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">
+                        <span className="font-semibold text-primary">Click to upload</span> payment screenshot
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  disabled={uploadingPayment}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handlePaymentScreenshotUpload(file);
+                  }}
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={isLoading}
@@ -459,7 +627,7 @@ export default function RegistrationForm({ event }) {
             Submitting...
           </>
         ) : event.isPaid ? (
-          "Register & Proceed to Payment"
+          "Submit Registration with Payment"
         ) : (
           "Submit Registration"
         )}

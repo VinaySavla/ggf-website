@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { deleteFileFromStorage, deleteMultipleFilesFromStorage } from "@/lib/storage";
 
 export async function submitPaymentProof(data) {
   try {
@@ -99,9 +100,41 @@ export async function deleteRegistration(registrationId) {
       return { error: "Unauthorized - Only Super Admin can delete registrations" };
     }
 
+    // Get registration to collect file URLs
+    const registration = await prisma.registration.findUnique({
+      where: { id: registrationId },
+    });
+
+    if (!registration) {
+      return { error: "Registration not found" };
+    }
+
+    // Collect all file URLs from registration
+    const filesToDelete = [];
+    
+    // Add payment screenshot
+    if (registration.paymentSs) {
+      filesToDelete.push(registration.paymentSs);
+    }
+    
+    // Add any uploaded files from userData (form fields)
+    if (registration.userData && typeof registration.userData === 'object') {
+      Object.values(registration.userData).forEach(value => {
+        if (typeof value === 'string' && value.startsWith('/') && value.match(/\.(jpg|jpeg|png|gif|webp|pdf|doc|docx)$/i)) {
+          filesToDelete.push(value);
+        }
+      });
+    }
+
+    // Delete from database
     await prisma.registration.delete({
       where: { id: registrationId },
     });
+
+    // Delete files from storage
+    if (filesToDelete.length > 0) {
+      await deleteMultipleFilesFromStorage(filesToDelete);
+    }
 
     return { success: true };
   } catch (error) {

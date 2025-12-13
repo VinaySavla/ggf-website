@@ -14,7 +14,7 @@ export default async function AdminSettingsPage() {
   // In a real app, these would come from a database or config
   const settings = {
     siteName: "Godhra Graduates Forum",
-    siteEmail: "admin@ggf.com",
+    siteEmail: "admin@godhragraduatesforum.in",
     smtpHost: process.env.SMTP_HOST || "Not configured",
     smtpPort: process.env.SMTP_PORT || "Not configured",
     smtpConfigured: !!(process.env.SMTP_HOST && process.env.SMTP_USER),
