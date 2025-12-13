@@ -25,8 +25,8 @@ async function getDashboardStats(userId, role) {
   const [
     totalEvents,
     pendingRegistrations,
-    totalPlayers,
     totalUsers,
+    totalAccounts,
   ] = await Promise.all([
     prisma.event.count(isAdmin ? {} : {
       where: { tournament: { organizerId: userId } }
@@ -51,8 +51,8 @@ async function getDashboardStats(userId, role) {
   return {
     totalEvents,
     pendingRegistrations,
-    totalPlayers,
     totalUsers,
+    totalAccounts,
     recentRegistrations,
   };
 }
@@ -77,8 +77,8 @@ export default async function AdminDashboard() {
       href: "/admin/registrations",
     },
     {
-      title: "Total Players",
-      value: stats.totalPlayers,
+      title: "Total Users",
+      value: stats.totalUsers,
       icon: Users,
       color: "bg-green-500",
       href: "/admin/user",
@@ -87,8 +87,8 @@ export default async function AdminDashboard() {
 
   if (session.user.role === "SUPER_ADMIN") {
     statCards.push({
-      title: "Total Users",
-      value: stats.totalUsers,
+      title: "Total Accounts",
+      value: stats.totalAccounts,
       icon: TrendingUp,
       color: "bg-purple-500",
       href: "/admin/users",

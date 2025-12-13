@@ -180,7 +180,7 @@ model Team {
   id             String             @id @default(cuid())
   name           String
   logo           String?
-  color          String?
+  gender         String?            // "Male" or "Female"
   tournament     TournamentMaster   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
   tournamentId   String
   createdAt      DateTime           @default(now())
@@ -199,7 +199,7 @@ model TournamentRoster {
   tournamentId   String
   team           Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
   teamId         String
-  auctionPrice   Int              @default(0)
+  auctionPrice   BigInt           @default(0)
   role           String?          // e.g., "Captain", "Vice-Captain"
   createdAt      DateTime         @default(now())
 

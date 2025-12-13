@@ -6,7 +6,7 @@ import OrganizerForm from "@/components/admin/OrganizerForm";
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: "Add Organizer - GGF Admin",
+  title: "Add User - GGF Admin",
 };
 
 export default async function NewUserPage() {
@@ -19,8 +19,8 @@ export default async function NewUserPage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Add New Organizer</h1>
-        <p className="text-gray-600">Create a new organizer account</p>
+        <h1 className="text-2xl font-bold text-gray-900">Add New User</h1>
+        <p className="text-gray-600">Create a new user account with any role</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">

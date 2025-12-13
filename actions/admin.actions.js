@@ -4,7 +4,12 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// Keep createOrganizer as alias for backward compatibility
 export async function createOrganizer(data) {
+  return createUser({ ...data, role: "ORGANIZER" });
+}
+
+export async function createUser(data) {
   try {
     const session = await auth();
 
@@ -12,7 +17,13 @@ export async function createOrganizer(data) {
       return { error: "Unauthorized" };
     }
 
-    const { name, email, mobile, password } = data;
+    const { name, email, mobile, password, role = "USER" } = data;
+
+    // Validate role
+    const validRoles = ["USER", "ORGANIZER", "SUPER_ADMIN"];
+    if (!validRoles.includes(role)) {
+      return { error: "Invalid role" };
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -37,14 +48,14 @@ export async function createOrganizer(data) {
         email,
         mobile: mobile || null,
         password: hashedPassword,
-        role: "ORGANIZER",
+        role,
       },
     });
 
     return { success: true };
   } catch (error) {
-    console.error("Create organizer error:", error);
-    return { error: "Failed to create organizer. Please try again." };
+    console.error("Create user error:", error);
+    return { error: "Failed to create user. Please try again." };
   }
 }
 

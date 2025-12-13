@@ -470,28 +470,30 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
             </div>
           </div>
 
-          {/* Organizer Selection (Optional) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Assign to Organizer <span className="text-gray-400">(Optional)</span>
-            </label>
-            <select
-              name="organizerId"
-              value={formData.organizerId}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-            >
-              <option value="">No organizer (Super Admin manages)</option>
-              {organizers.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name} ({org.email})
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500">
-              Leave empty if Super Admin will manage this event directly
-            </p>
-          </div>
+          {/* Organizer Selection (Optional) - Only visible to Super Admin */}
+          {userRole === "SUPER_ADMIN" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Assign to Organizer <span className="text-gray-400">(Optional)</span>
+              </label>
+              <select
+                name="organizerId"
+                value={formData.organizerId}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                <option value="">No organizer (Super Admin manages)</option>
+                {organizers.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name} ({org.email})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                Leave empty if Super Admin will manage this event directly
+              </p>
+            </div>
+          )}
 
           {/* Sports Selection */}
           <div>

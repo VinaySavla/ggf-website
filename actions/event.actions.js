@@ -15,7 +15,7 @@ export async function createEvent(data) {
     }
 
     const { 
-      title, description, eligibility, type, tournamentType, eventDate, venue, 
+      title, description, eligibility, type, tournamentType, eventDate, venue, village,
       isPaid, upiQrImage, isActive, formSchema, organizerId, sportIds,
       registrationStartDate, registrationEndDate,
       registrationCountType, maxTotalRegistrations, maxMaleRegistrations, maxFemaleRegistrations
@@ -101,7 +101,7 @@ export async function updateEvent(id, data) {
     }
 
     const { 
-      title, description, eligibility, type, tournamentType, eventDate, venue, 
+      title, description, eligibility, type, tournamentType, eventDate, venue, village,
       isPaid, upiQrImage, isActive, formSchema, organizerId, sportIds,
       registrationStartDate, registrationEndDate,
       registrationCountType, maxTotalRegistrations, maxMaleRegistrations, maxFemaleRegistrations

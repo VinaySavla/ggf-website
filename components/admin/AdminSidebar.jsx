@@ -16,7 +16,9 @@ import {
   Menu,
   Dumbbell,
   BarChart3,
-  Images
+  Images,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
@@ -24,28 +26,64 @@ import { signOut } from "next-auth/react";
 export default function AdminSidebar({ userRole }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState({
+    events: true,
+    users: true,
+    settings: true,
+  });
 
-  const navItems = [
+  const toggleMenu = (menu) => {
+    setExpandedMenus(prev => ({ ...prev, [menu]: !prev[menu] }));
+  };
+
+  // Navigation structure with hierarchy
+  const navStructure = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/events", label: "Events", icon: Calendar },
-    { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
-    { href: "/admin/user", label: "Users", icon: Users },
-    { href: "/admin/teams", label: "Teams", icon: Trophy },
-    { href: "/admin/stats", label: "Member Stats", icon: BarChart3 },
-    { href: "/admin/gallery", label: "Gallery", icon: Images },
+    {
+      label: "Events",
+      icon: Calendar,
+      key: "events",
+      children: [
+        { href: "/admin/events", label: "All Events", icon: Calendar },
+        { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
+        { href: "/admin/teams", label: "Teams", icon: Trophy },
+      ],
+    },
   ];
 
+  // Super Admin only items - Users and Gallery
   if (userRole === "SUPER_ADMIN") {
-    navItems.push(
-      { href: "/admin/sports", label: "Sports", icon: Dumbbell },
-      { href: "/admin/users", label: "Users", icon: UserCog },
-      { href: "/admin/settings", label: "Settings", icon: Settings }
+    navStructure.push(
+      {
+        label: "Users",
+        icon: Users,
+        key: "users",
+        children: [
+          { href: "/admin/user", label: "All Users", icon: Users },
+          { href: "/admin/stats", label: "Users Stats", icon: BarChart3 },
+        ],
+      },
+      { href: "/admin/gallery", label: "Gallery", icon: Images },
+      {
+        label: "Settings",
+        icon: Settings,
+        key: "settings",
+        children: [
+          { href: "/admin/sports", label: "Sports", icon: Dumbbell },
+          { href: "/admin/users", label: "User Creation", icon: UserCog },
+          { href: "/admin/settings", label: "Site Settings", icon: Settings },
+        ],
+      }
     );
   }
 
   const isActive = (href) => {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
+  };
+
+  const isParentActive = (children) => {
+    return children?.some(child => isActive(child.href));
   };
 
   return (
@@ -100,22 +138,71 @@ export default function AdminSidebar({ userRole }) {
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 flex-1">
+        <nav className="p-4 flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
           <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={() => setIsOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive(item.href)
-                      ? "bg-primary text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </Link>
+            {navStructure.map((item) => (
+              <li key={item.href || item.key}>
+                {/* Regular menu item */}
+                {item.href && !item.children && (
+                  <Link
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive(item.href)
+                        ? "bg-primary text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </Link>
+                )}
+
+                {/* Parent menu with children */}
+                {item.children && (
+                  <div>
+                    <button
+                      onClick={() => toggleMenu(item.key)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                        isParentActive(item.children)
+                          ? "bg-primary/10 text-primary"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium">{item.label}</span>
+                      </div>
+                      {expandedMenus[item.key] ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </button>
+                    
+                    {/* Children */}
+                    {expandedMenus[item.key] && (
+                      <ul className="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
+                        {item.children.map((child) => (
+                          <li key={child.href}>
+                            <Link
+                              href={child.href}
+                              onClick={() => setIsOpen(false)}
+                              className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors text-sm ${
+                                isActive(child.href)
+                                  ? "bg-primary text-white"
+                                  : "text-gray-600 hover:bg-gray-100"
+                              }`}
+                            >
+                              <child.icon className="w-4 h-4" />
+                              <span>{child.label}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

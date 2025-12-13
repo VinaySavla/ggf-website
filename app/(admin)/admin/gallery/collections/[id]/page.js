@@ -31,7 +31,7 @@ async function getCollection(id) {
 export default async function CollectionDetailPage({ params }) {
   const session = await auth();
   
-  if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+  if (!session || session.user.role !== "SUPER_ADMIN") {
     redirect("/admin");
   }
 

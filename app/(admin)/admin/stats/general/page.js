@@ -14,7 +14,7 @@ export const metadata = {
 export default async function GeneralStatsPage() {
   const session = await auth();
   
-  if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+  if (!session || session.user.role !== "SUPER_ADMIN") {
     redirect("/admin");
   }
 

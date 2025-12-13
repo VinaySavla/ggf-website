@@ -3,22 +3,55 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, X } from "lucide-react";
+import Image from "next/image";
 import { createTeam, updateTeam } from "@/actions/team.actions";
 
 export default function TeamForm({ team, tournaments = [] }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [formData, setFormData] = useState({
     name: team?.name || "",
     tournamentId: team?.tournamentId || "",
-    color: team?.color || "#6B1E9B",
     logo: team?.logo || "",
+    gender: team?.gender || "",
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingLogo(true);
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+      formDataUpload.append("folder", "teams/logos");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formDataUpload,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      setFormData((prev) => ({ ...prev, logo: data.url }));
+      toast.success("Logo uploaded successfully");
+    } catch (error) {
+      toast.error("Failed to upload logo");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const removeLogo = () => {
+    setFormData((prev) => ({ ...prev, logo: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -93,38 +126,65 @@ export default function TeamForm({ team, tournaments = [] }) {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Team Color
+          Gender (Optional)
         </label>
-        <div className="flex items-center space-x-3">
-          <input
-            type="color"
-            name="color"
-            value={formData.color}
-            onChange={handleChange}
-            className="w-12 h-12 border border-gray-300 rounded-lg cursor-pointer"
-          />
-          <input
-            type="text"
-            value={formData.color}
-            onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-            placeholder="#6B1E9B"
-          />
-        </div>
+        <select
+          name="gender"
+          value={formData.gender}
+          onChange={handleChange}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+        >
+          <option value="">Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Logo URL
+          Team Logo (Optional)
         </label>
-        <input
-          type="text"
-          name="logo"
-          value={formData.logo}
-          onChange={handleChange}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          placeholder="Enter logo image URL"
-        />
+        {formData.logo ? (
+          <div className="relative w-32 h-32 border border-gray-300 rounded-lg overflow-hidden">
+            <Image
+              src={formData.logo}
+              alt="Team Logo"
+              fill
+              className="object-contain"
+            />
+            <button
+              type="button"
+              onClick={removeLogo}
+              className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="hidden"
+              id="logo-upload"
+              disabled={uploadingLogo}
+            />
+            <label
+              htmlFor="logo-upload"
+              className="flex items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary transition"
+            >
+              {uploadingLogo ? (
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              ) : (
+                <div className="text-center">
+                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
+                  <span className="text-sm text-gray-500 mt-1">Upload Logo</span>
+                </div>
+              )}
+            </label>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-end space-x-4 pt-4">

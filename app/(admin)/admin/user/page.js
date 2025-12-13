@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Users, Trophy, Plus, UserCheck, UserX, Calendar } from "lucide-react";
 import { formatDate } from "@/lib/utils";
@@ -79,6 +80,11 @@ async function getUsersWithoutPlayers() {
 
 export default async function PlayersAdminPage() {
   const session = await auth();
+  
+  if (!session || session.user.role !== "SUPER_ADMIN") {
+    redirect("/admin");
+  }
+
   const [players, usersWithoutPlayers] = await Promise.all([
     getPlayers(),
     getUsersWithoutPlayers(),

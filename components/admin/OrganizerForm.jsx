@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { createOrganizer } from "@/actions/admin.actions";
+import { createUser } from "@/actions/admin.actions";
 
 export default function OrganizerForm() {
   const router = useRouter();
@@ -15,6 +15,7 @@ export default function OrganizerForm() {
     email: "",
     mobile: "",
     password: "",
+    role: "USER",
   });
 
   const handleChange = (e) => {
@@ -30,6 +31,12 @@ export default function OrganizerForm() {
       return;
     }
 
+    // Mobile is required for regular users
+    if (formData.role === "USER" && !formData.mobile) {
+      toast.error("Mobile number is required for regular users");
+      return;
+    }
+
     if (formData.password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
@@ -38,17 +45,17 @@ export default function OrganizerForm() {
     setIsLoading(true);
 
     try {
-      const result = await createOrganizer(formData);
+      const result = await createUser(formData);
 
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Organizer created successfully!");
+        toast.success("User created successfully!");
         router.push("/admin/users");
         router.refresh();
       }
     } catch (error) {
-      toast.error("Failed to create organizer");
+      toast.error("Failed to create user");
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +63,28 @@ export default function OrganizerForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Role <span className="text-red-500">*</span>
+        </label>
+        <select
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          required
+        >
+          <option value="USER">User</option>
+          <option value="ORGANIZER">Organizer</option>
+          <option value="SUPER_ADMIN">Super Admin</option>
+        </select>
+        <p className="mt-1 text-xs text-gray-500">
+          {formData.role === "USER" && "Regular user - can register for events"}
+          {formData.role === "ORGANIZER" && "Organizer - can create and manage events"}
+          {formData.role === "SUPER_ADMIN" && "Super Admin - full access to all features"}
+        </p>
+      </div>
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Full Name <span className="text-red-500">*</span>
@@ -88,7 +117,7 @@ export default function OrganizerForm() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Mobile Number
+          Mobile Number {formData.role === "USER" && <span className="text-red-500">*</span>}
         </label>
         <input
           type="tel"
@@ -97,7 +126,11 @@ export default function OrganizerForm() {
           onChange={handleChange}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
           placeholder="Enter mobile number"
+          required={formData.role === "USER"}
         />
+        {formData.role !== "USER" && (
+          <p className="mt-1 text-xs text-gray-500">Optional for organizers and admins</p>
+        )}
       </div>
 
       <div>
@@ -143,7 +176,7 @@ export default function OrganizerForm() {
               Creating...
             </>
           ) : (
-            "Create Organizer"
+            "Create User"
           )}
         </button>
       </div>

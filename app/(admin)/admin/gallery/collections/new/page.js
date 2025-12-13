@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Loader2, Camera, X, ArrowLeft } from "lucide-react";
@@ -10,6 +11,7 @@ import { createCollection } from "@/actions/gallery.actions";
 
 export default function NewCollectionPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,6 +19,25 @@ export default function NewCollectionPage() {
     description: "",
     coverImage: "",
   });
+
+  // Redirect non-super-admins
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role !== "SUPER_ADMIN") {
+      router.push("/admin");
+    }
+  }, [session, status, router]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (status === "authenticated" && session?.user?.role !== "SUPER_ADMIN") {
+    return null;
+  }
 
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0];

@@ -16,7 +16,7 @@ async function getUsers() {
   return prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      playerProfile: true,
+      userProfile: true,
       _count: {
         select: { createdEvents: true },
       },
@@ -41,15 +41,15 @@ export default async function UsersPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="text-gray-600">Manage system users and organizers</p>
+          <h1 className="text-2xl font-bold text-gray-900">User Creation</h1>
+          <p className="text-gray-600">Create and manage system users</p>
         </div>
         <Link
           href="/admin/users/new"
           className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition"
         >
           <Plus className="w-5 h-5" />
-          <span>Add Organizer</span>
+          <span>Add User</span>
         </Link>
       </div>
 

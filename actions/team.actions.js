@@ -11,7 +11,7 @@ export async function createTeam(data) {
       return { error: "Unauthorized" };
     }
 
-    const { name, tournamentId, color, logo } = data;
+    const { name, tournamentId, logo, gender } = data;
 
     // Verify tournament exists and user has access
     const tournament = await prisma.tournamentMaster.findUnique({
@@ -30,8 +30,8 @@ export async function createTeam(data) {
       data: {
         name,
         tournamentId,
-        color: color || "#6B1E9B",
         logo: logo || null,
+        gender: gender || null,
       },
     });
 
@@ -63,14 +63,14 @@ export async function updateTeam(id, data) {
       return { error: "You don't have permission to edit this team" };
     }
 
-    const { name, color, logo } = data;
+    const { name, logo, gender } = data;
 
     await prisma.team.update({
       where: { id },
       data: {
         name,
-        color: color || "#6B1E9B",
         logo: logo || null,
+        gender: gender || null,
       },
     });
 
