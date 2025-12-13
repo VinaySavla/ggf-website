@@ -10,7 +10,7 @@ import AddPlayerButton from "@/components/admin/AddPlayerButton";
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: "Players Management - GGF Admin",
+  title: "Users Management - GGF Admin",
 };
 
 async function getPlayers() {
@@ -65,7 +65,7 @@ async function getPlayers() {
 async function getUsersWithoutPlayers() {
   return prisma.user.findMany({
     where: {
-      playerProfile: null,
+      userProfile: null,
     },
     select: {
       id: true,
@@ -93,8 +93,8 @@ export default async function PlayersAdminPage() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Players</h1>
-          <p className="text-gray-600">Manage player profiles and stats</p>
+          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+          <p className="text-gray-600">Manage user profiles and stats</p>
         </div>
         <AddPlayerButton usersWithoutPlayers={usersWithoutPlayers} />
       </div>
@@ -104,8 +104,8 @@ export default async function PlayersAdminPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Player</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Player ID</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">User</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">User ID</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Account</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Events</th>
@@ -120,7 +120,7 @@ export default async function PlayersAdminPage() {
                 <tr key={player.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <Link 
-                      href={`/admin/players/${player.playerId}`}
+                      href={`/admin/user/${player.playerId}`}
                       className="flex items-center space-x-3 group"
                     >
                       <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
@@ -134,7 +134,7 @@ export default async function PlayersAdminPage() {
                     </Link>
                   </td>
                   <td className="px-6 py-4">
-                    <Link href={`/admin/players/${player.playerId}`}>
+                    <Link href={`/admin/user/${player.playerId}`}>
                       <code className="text-sm bg-gray-100 px-2 py-1 rounded text-primary hover:bg-primary/10 transition">
                         {player.playerId}
                       </code>
@@ -192,7 +192,7 @@ export default async function PlayersAdminPage() {
       ) : (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg mb-4">No players registered yet</p>
+          <p className="text-gray-500 text-lg mb-4">No users registered yet</p>
           <AddPlayerButton usersWithoutPlayers={usersWithoutPlayers} />
         </div>
       )}

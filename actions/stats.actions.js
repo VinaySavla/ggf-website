@@ -169,7 +169,7 @@ export async function createPlayerStats(data) {
     });
 
     revalidatePath("/admin/stats");
-    revalidatePath(`/admin/players/${playerId}`);
+    revalidatePath(`/admin/user/${playerId}`);
     return { stats };
   } catch (error) {
     console.error("Failed to create player stats:", error);

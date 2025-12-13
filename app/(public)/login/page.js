@@ -53,7 +53,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email, Mobile, or Player ID
+                Email, Mobile, or Member ID
               </label>
               <input
                 type="text"
@@ -62,7 +62,7 @@ export default function LoginPage() {
                   setFormData({ ...formData, identifier: e.target.value })
                 }
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                placeholder="Enter your email, mobile, or player ID"
+                placeholder="Enter your email, mobile, or member ID"
                 required
               />
             </div>

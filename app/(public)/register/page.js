@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, Upload, X, Camera } from "lucide-react";
-import { registerPlayer } from "@/actions/auth.actions";
+import { registerUser } from "@/actions/auth.actions";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +17,7 @@ export default function RegisterPage() {
     name: "",
     email: "",
     mobile: "",
+    gender: "",
     password: "",
     confirmPassword: "",
     photo: "",
@@ -79,6 +80,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!formData.gender) {
+      toast.error("Please select your gender");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -92,10 +98,11 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const result = await registerPlayer({
+      const result = await registerUser({
         name: formData.name,
         email: formData.email,
         mobile: formData.mobile,
+        gender: formData.gender,
         password: formData.password,
         photo: formData.photo,
       });
@@ -232,6 +239,28 @@ export default function RegisterPage() {
                 placeholder="Enter your mobile number"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-4">
+                {["Male", "Female", "Other"].map((gender) => (
+                  <label key={gender} className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={gender}
+                      checked={formData.gender === gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                      required
+                    />
+                    <span className="ml-2 text-gray-700">{gender}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div>

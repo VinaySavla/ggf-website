@@ -21,8 +21,10 @@ export async function getProfile() {
         mobile: true,
         photo: true,
         role: true,
+        gender: true,
+        village: true,
         createdAt: true,
-        playerProfile: {
+        userProfile: {
           select: {
             id: true,
             playerId: true,
@@ -50,7 +52,7 @@ export async function updateProfile(data) {
       return { error: "Not authenticated" };
     }
 
-    const { name, email, mobile, bio } = data;
+    const { name, email, mobile, bio, gender, village } = data;
 
     // Check if email/mobile already used by another user
     const existingUser = await prisma.user.findFirst({
@@ -80,6 +82,8 @@ export async function updateProfile(data) {
           name,
           email,
           mobile,
+          gender,
+          village,
         },
       });
 

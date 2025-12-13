@@ -92,7 +92,7 @@ export async function createPlayer(data) {
       },
     });
 
-    revalidatePath("/admin/players");
+    revalidatePath("/admin/user");
     return { player };
   } catch (error) {
     console.error("Failed to create player:", error);
@@ -120,8 +120,8 @@ export async function updatePlayer(id, data) {
       },
     });
 
-    revalidatePath("/admin/players");
-    revalidatePath(`/admin/players/${player.playerId}`);
+    revalidatePath("/admin/user");
+    revalidatePath(`/admin/user/${player.playerId}`);
     return { player };
   } catch (error) {
     console.error("Failed to update player:", error);
@@ -161,7 +161,7 @@ export async function deletePlayer(id) {
       await deleteFileFromStorage(player.user.photo);
     }
 
-    revalidatePath("/admin/players");
+    revalidatePath("/admin/user");
     return { success: true };
   } catch (error) {
     console.error("Failed to delete player:", error);
@@ -169,12 +169,12 @@ export async function deletePlayer(id) {
   }
 }
 
-// Get users without player profiles (for linking)
+// Get users without member profiles (for linking)
 export async function getUsersWithoutPlayers() {
   try {
     const users = await prisma.user.findMany({
       where: {
-        playerProfile: null,
+        userProfile: null,
       },
       select: {
         id: true,
@@ -212,7 +212,7 @@ export async function linkPlayerToUser(playerId, userId) {
       data: { userId },
     });
 
-    revalidatePath("/admin/players");
+    revalidatePath("/admin/user");
     return { player };
   } catch (error) {
     console.error("Failed to link player to user:", error);
@@ -280,7 +280,7 @@ export async function createPlayerWithAccount(data) {
       console.error('Failed to send welcome email:', err);
     });
 
-    revalidatePath("/admin/players");
+    revalidatePath("/admin/user");
     return { success: true, playerId };
   } catch (error) {
     console.error("Failed to create player with account:", error);

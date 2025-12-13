@@ -12,12 +12,12 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ params }) {
   const { id } = await params;
   const player = await getPlayerBasic(id);
-  if (!player) return { title: "Player Not Found" };
+  if (!player) return { title: "User Not Found" };
   
-  const playerName = player.user?.name || player.name || "Unknown Player";
+  const playerName = player.user?.name || player.name || "Unknown User";
   return {
-    title: `${playerName} - Player Profile - GGF Admin`,
-    description: `Player profile for ${playerName}`,
+    title: `${playerName} - User Profile - GGF Admin`,
+    description: `User profile for ${playerName}`,
   };
 }
 
@@ -177,15 +177,15 @@ export default async function AdminPlayerProfilePage({ params }) {
             <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
             <p className="text-gray-600 mb-6">
-              You don't have permission to view this player profile.
-              {isOrganizer && " You can only view profiles of players who have registered for your events."}
+              You don't have permission to view this user profile.
+              {isOrganizer && " You can only view profiles of users who have registered for your events."}
             </p>
             <Link
-              href="/admin/players"
+              href="/admin/user"
               className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Players
+              Back to Users
             </Link>
           </div>
         </div>
@@ -198,13 +198,13 @@ export default async function AdminPlayerProfilePage({ params }) {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <Link
-            href="/admin/players"
+            href="/admin/user"
             className="inline-flex items-center text-gray-600 hover:text-primary mb-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Players
+            Back to Users
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Player Profile</h1>
+          <h1 className="text-2xl font-bold text-gray-900">User Profile</h1>
         </div>
         {isOwnProfile && (
           <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-sm px-3 py-1 rounded-full">

@@ -29,9 +29,9 @@ export default function AdminSidebar({ userRole }) {
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/events", label: "Events", icon: Calendar },
     { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
-    { href: "/admin/players", label: "Players", icon: Users },
+    { href: "/admin/user", label: "Users", icon: Users },
     { href: "/admin/teams", label: "Teams", icon: Trophy },
-    { href: "/admin/stats", label: "Player Stats", icon: BarChart3 },
+    { href: "/admin/stats", label: "Member Stats", icon: BarChart3 },
     { href: "/admin/gallery", label: "Gallery", icon: Images },
   ];
 

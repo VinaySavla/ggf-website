@@ -96,6 +96,8 @@ function EventCard({ event, isPast = false }) {
             className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
               event.type === 'Tournament'
                 ? 'bg-primary-100 text-primary-700'
+                : event.type === 'Competition'
+                ? 'bg-blue-100 text-blue-700'
                 : 'bg-accent-100 text-accent-700'
             }`}
           >
@@ -109,7 +111,7 @@ function EventCard({ event, isPast = false }) {
         </div>
 
         <h3 className="text-xl font-semibold text-gray-900 mb-3">{event.title}</h3>
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description?.replace(/<[^>]*>/g, '')}</p>
 
         <div className="space-y-2 mb-4">
           {event.eventDate && (

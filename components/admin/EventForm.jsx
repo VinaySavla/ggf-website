@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { 
   Loader2, Plus, Trash2, GripVertical, Copy, ChevronUp, ChevronDown,
   Type, AlignLeft, Mail, Phone, Hash, List, Circle, Square, Upload, 
@@ -11,6 +12,16 @@ import {
 } from "lucide-react";
 import { createEvent, updateEvent } from "@/actions/event.actions";
 import { createSport } from "@/actions/stats.actions";
+
+// Dynamically import RichTextEditor to prevent SSR issues
+const RichTextEditor = dynamic(() => import("./RichTextEditor"), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[200px] bg-gray-100 rounded-lg flex items-center justify-center">
+      <span className="text-gray-500">Loading editor...</span>
+    </div>
+  )
+});
 
 // Field types similar to Google Forms
 const FIELD_TYPES = [
@@ -32,13 +43,14 @@ const FIELD_TYPES = [
 
 // Mandatory field IDs that cannot be deleted or have their type changed
 // These are auto-filled from user profile during registration
-const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "profileImage"];
+const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "gender", "profileImage"];
 
 // Initial default fields for new events
 const DEFAULT_FIELDS = [
   { id: "name", type: "text", label: "Full Name", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
   { id: "email", type: "email", label: "Email Address", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
   { id: "mobile", type: "tel", label: "Mobile Number", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
+  { id: "gender", type: "radio", label: "Gender", required: true, options: ["Male", "Female"], helpText: "Auto-filled from user profile", isMandatory: true },
   { id: "profileImage", type: "image", label: "Profile Photo", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true, imageUrl: "" },
 ];
 
@@ -58,13 +70,24 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
   const [formData, setFormData] = useState({
     title: event?.title || "",
     description: event?.description || "",
-    type: event?.type || "General",
+    eligibility: event?.eligibility || "",
+    type: event?.type || "Seminar",
+    tournamentType: event?.tournamentType || "",
     eventDate: event?.eventDate ? new Date(event.eventDate).toISOString().slice(0, 16) : "",
     venue: event?.venue || "",
+    village: event?.village || "",
     isPaid: event?.isPaid || false,
     upiQrImage: event?.upiQrImage || "",
     isActive: event?.isActive ?? true,
     organizerId: event?.tournament?.organizerId || "",
+    // Registration window
+    registrationStartDate: event?.registrationStartDate ? new Date(event.registrationStartDate).toISOString().slice(0, 16) : "",
+    registrationEndDate: event?.registrationEndDate ? new Date(event.registrationEndDate).toISOString().slice(0, 16) : "",
+    // Registration counts
+    registrationCountType: event?.registrationCountType || "common",
+    maxTotalRegistrations: event?.maxTotalRegistrations || "",
+    maxMaleRegistrations: event?.maxMaleRegistrations || "",
+    maxFemaleRegistrations: event?.maxFemaleRegistrations || "",
   });
   
   const [formSchema, setFormSchema] = useState(
@@ -255,6 +278,12 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
       return;
     }
 
+    // Validate tournament type when Tournament is selected
+    if (formData.type === "Tournament" && !formData.tournamentType) {
+      toast.error("Please select a tournament type");
+      return;
+    }
+
     // Validate form schema
     const invalidFields = formSchema.filter(
       f => !["note", "image"].includes(f.type) && !f.label.trim()
@@ -271,6 +300,12 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
         ...formData,
         formSchema,
         eventDate: formData.eventDate ? new Date(formData.eventDate) : null,
+        registrationStartDate: formData.registrationStartDate ? new Date(formData.registrationStartDate) : null,
+        registrationEndDate: formData.registrationEndDate ? new Date(formData.registrationEndDate) : null,
+        maxTotalRegistrations: formData.maxTotalRegistrations ? parseInt(formData.maxTotalRegistrations) : null,
+        maxMaleRegistrations: formData.maxMaleRegistrations ? parseInt(formData.maxMaleRegistrations) : null,
+        maxFemaleRegistrations: formData.maxFemaleRegistrations ? parseInt(formData.maxFemaleRegistrations) : null,
+        tournamentType: formData.type === "Tournament" ? formData.tournamentType : null,
         sportIds: selectedSports,
       };
 
@@ -334,26 +369,61 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
               <select
                 name="type"
                 value={formData.type}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  // Reset tournament type when changing event type
+                  if (e.target.value !== "Tournament") {
+                    setFormData(prev => ({ ...prev, tournamentType: "" }));
+                  }
+                }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               >
-                <option value="General">General Event</option>
+                <option value="Seminar">Seminar</option>
+                <option value="Competition">Competition</option>
                 <option value="Tournament">Tournament</option>
               </select>
             </div>
+
+            {formData.type === "Tournament" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tournament Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="tournamentType"
+                  value={formData.tournamentType}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="">Select tournament type</option>
+                  <option value="General">General</option>
+                  <option value="Village Specific">Village Specific</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description
             </label>
-            <textarea
-              name="description"
+            <RichTextEditor
               value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              placeholder="Enter event description"
+              onChange={(value) => setFormData(prev => ({ ...prev, description: value }))}
+              placeholder="Enter event description..."
+              minHeight="120px"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Eligibility Criteria
+            </label>
+            <RichTextEditor
+              value={formData.eligibility}
+              onChange={(value) => setFormData(prev => ({ ...prev, eligibility: value }))}
+              placeholder="Enter eligibility criteria..."
+              minHeight="100px"
             />
           </div>
 
@@ -382,6 +452,20 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 placeholder="Enter venue"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Village
+              </label>
+              <input
+                type="text"
+                name="village"
+                value={formData.village}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                placeholder="Enter village name"
               />
             </div>
           </div>
@@ -487,6 +571,134 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
           </div>
         </div>
       )}
+
+      {/* Registration Settings Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-blue-600 px-6 py-4">
+          <h3 className="text-lg font-semibold text-white">Registration Settings</h3>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* Registration Window */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Registration Window</h4>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Registration Opens
+                </label>
+                <input
+                  type="datetime-local"
+                  name="registrationStartDate"
+                  value={formData.registrationStartDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+                <p className="mt-1 text-xs text-gray-500">Leave empty for immediate registration</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Registration Closes
+                </label>
+                <input
+                  type="datetime-local"
+                  name="registrationEndDate"
+                  value={formData.registrationEndDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+                <p className="mt-1 text-xs text-gray-500">Leave empty for no end date</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Registration Count Limits */}
+          <div className="border-t pt-6">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">Registration Limits</h4>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 mb-2">
+                Count Type
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registrationCountType"
+                    value="common"
+                    checked={formData.registrationCountType === "common"}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Common (Total limit only)</span>
+                </label>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="radio"
+                    name="registrationCountType"
+                    value="separate"
+                    checked={formData.registrationCountType === "separate"}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Separate (Male & Female limits)</span>
+                </label>
+              </div>
+            </div>
+
+            {formData.registrationCountType === "common" ? (
+              <div className="max-w-xs">
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Maximum Registrations
+                </label>
+                <input
+                  type="number"
+                  name="maxTotalRegistrations"
+                  value={formData.maxTotalRegistrations}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="Leave empty for unlimited"
+                />
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Maximum Male Registrations
+                  </label>
+                  <input
+                    type="number"
+                    name="maxMaleRegistrations"
+                    value={formData.maxMaleRegistrations}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    placeholder="Leave empty for unlimited"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">
+                    Maximum Female Registrations
+                  </label>
+                  <input
+                    type="number"
+                    name="maxFemaleRegistrations"
+                    value={formData.maxFemaleRegistrations}
+                    onChange={handleChange}
+                    min="0"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                    placeholder="Leave empty for unlimited"
+                  />
+                </div>
+              </div>
+            )}
+            <p className="mt-2 text-xs text-gray-500">
+              Registration will automatically close when the limit is reached
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Payment Settings Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -664,8 +876,48 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                 {/* Field Content - Expanded when active */}
                 {activeFieldIndex === index && (
                   <div className="p-4 space-y-4">
-                    {/* Note/Description type */}
-                    {field.type === "note" && (
+                    {/* Mandatory Field - Read Only View */}
+                    {isMandatoryField && (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-blue-700 font-medium">🔒 Mandatory Field (Read-Only)</span>
+                          </div>
+                          <div className="space-y-3 text-sm">
+                            <div className="flex items-start gap-2">
+                              <span className="text-gray-500 font-medium min-w-[80px]">Label:</span>
+                              <span className="text-gray-700">{field.label}</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="text-gray-500 font-medium min-w-[80px]">Type:</span>
+                              <span className="text-gray-700">{FIELD_TYPES.find(t => t.value === field.type)?.label || field.type}</span>
+                            </div>
+                            {field.helpText && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-gray-500 font-medium min-w-[80px]">Help Text:</span>
+                                <span className="text-gray-700">{field.helpText}</span>
+                              </div>
+                            )}
+                            {field.options && field.options.length > 0 && (
+                              <div className="flex items-start gap-2">
+                                <span className="text-gray-500 font-medium min-w-[80px]">Options:</span>
+                                <span className="text-gray-700">{field.options.join(", ")}</span>
+                              </div>
+                            )}
+                            <div className="flex items-start gap-2">
+                              <span className="text-gray-500 font-medium min-w-[80px]">Required:</span>
+                              <span className="text-gray-700">Yes (always)</span>
+                            </div>
+                          </div>
+                          <p className="text-blue-600 text-xs mt-3 pt-3 border-t border-blue-200">
+                            This field is auto-filled from the user's profile during registration. You can only reorder it using the up/down arrows.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Note/Description type - only for non-mandatory */}
+                    {!isMandatoryField && field.type === "note" && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Note Content
@@ -680,8 +932,8 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                       </div>
                     )}
 
-                    {/* Image Preview type */}
-                    {field.type === "image" && (
+                    {/* Image Preview type - only for non-mandatory */}
+                    {!isMandatoryField && field.type === "image" && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Image URL for Preview
@@ -706,8 +958,8 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                       </div>
                     )}
 
-                    {/* Regular input fields */}
-                    {!["note", "image"].includes(field.type) && (
+                    {/* Regular input fields - only for non-mandatory */}
+                    {!isMandatoryField && !["note", "image"].includes(field.type) && (
                       <>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -737,8 +989,8 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                       </>
                     )}
 
-                    {/* Options for select/radio/checkbox */}
-                    {["select", "radio", "checkbox"].includes(field.type) && (
+                    {/* Options for select/radio/checkbox - only for non-mandatory */}
+                    {!isMandatoryField && ["select", "radio", "checkbox"].includes(field.type) && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Options
@@ -831,68 +1083,41 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                       </div>
                     )}
 
-                    {/* Required toggle and field type change for non-display fields */}
-                    {!["note", "image"].includes(field.type) && (
+                    {/* Required toggle and field type change for non-display fields - only for non-mandatory */}
+                    {!isMandatoryField && !["note", "image"].includes(field.type) && (
                       <div className="flex items-center justify-between pt-4 border-t">
                         <div className="flex items-center gap-4">
                           <label className="block text-sm font-medium text-gray-700">
                             Field Type
                           </label>
-                          {isMandatoryField ? (
-                            <span className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm">
-                              {FIELD_TYPES.find(t => t.value === field.type)?.label || field.type}
-                              <span className="text-xs text-gray-500 ml-2">(locked)</span>
-                            </span>
-                          ) : (
-                            <select
-                              value={field.type}
-                              onChange={(e) => {
-                                const newType = e.target.value;
-                                updateField(index, "type", newType);
-                                // Add default options if switching to select/radio/checkbox
-                                if (["select", "radio", "checkbox"].includes(newType) && (!field.options || field.options.length === 0)) {
-                                  updateField(index, "options", ["Option 1"]);
-                                }
-                              }}
-                              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
-                            >
-                              {FIELD_TYPES.filter(t => !["note", "image"].includes(t.value)).map((type) => (
-                                <option key={type.value} value={type.value}>
-                                  {type.label}
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                          <select
+                            value={field.type}
+                            onChange={(e) => {
+                              const newType = e.target.value;
+                              updateField(index, "type", newType);
+                              // Add default options if switching to select/radio/checkbox
+                              if (["select", "radio", "checkbox"].includes(newType) && (!field.options || field.options.length === 0)) {
+                                updateField(index, "options", ["Option 1"]);
+                              }
+                            }}
+                            className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
+                          >
+                            {FIELD_TYPES.filter(t => !["note", "image"].includes(t.value)).map((type) => (
+                              <option key={type.value} value={type.value}>
+                                {type.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
-                        {isMandatoryField ? (
-                          <span className="flex items-center gap-2 text-sm text-blue-600">
-                            <span>Always Required</span>
-                            <input
-                              type="checkbox"
-                              checked={true}
-                              disabled
-                              className="w-5 h-5 text-blue-600 border-gray-300 rounded cursor-not-allowed"
-                            />
-                          </span>
-                        ) : (
-                          <label className="flex items-center gap-2 text-sm">
-                            <span className="text-gray-700">Required</span>
-                            <input
-                              type="checkbox"
-                              checked={field.required}
-                              onChange={(e) => updateField(index, "required", e.target.checked)}
-                              className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
-                            />
-                          </label>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Mandatory field info */}
-                    {isMandatoryField && (
-                      <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                        <p className="font-medium">🔒 Mandatory Field</p>
-                        <p className="text-blue-600 text-xs mt-1">This field is auto-filled from the user's profile during registration and cannot be deleted.</p>
+                        <label className="flex items-center gap-2 text-sm">
+                          <span className="text-gray-700">Required</span>
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => updateField(index, "required", e.target.checked)}
+                            className="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary"
+                          />
+                        </label>
                       </div>
                     )}
                   </div>

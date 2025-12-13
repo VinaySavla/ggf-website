@@ -5,8 +5,8 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/mail";
 
-// Generate unique Player ID
-async function generatePlayerId() {
+// Generate unique Member ID
+async function generateMemberId() {
   const now = new Date();
   const year = now.getFullYear().toString().slice(-2);
   const month = (now.getMonth() + 1).toString().padStart(2, "0");
@@ -23,9 +23,9 @@ async function generatePlayerId() {
   return `GGF-GSC-${yearMonth}-${index}`;
 }
 
-export async function registerPlayer(data) {
+export async function registerUser(data) {
   try {
-    const { name, email, mobile, password, photo } = data;
+    const { name, email, mobile, password, photo, gender } = data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -41,10 +41,10 @@ export async function registerPlayer(data) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Generate Player ID
-    const playerId = await generatePlayerId();
+    // Generate Member ID
+    const memberId = await generateMemberId();
 
-    // Create user and player profile in a transaction
+    // Create user and user profile in a transaction
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -53,13 +53,14 @@ export async function registerPlayer(data) {
           mobile,
           password: hashedPassword,
           photo,
-          role: "PLAYER",
+          gender,
+          role: "USER",
         },
       });
 
       await tx.masterPlayer.create({
         data: {
-          playerId,
+          playerId: memberId,
           userId: user.id,
           photo, // Also save to MasterPlayer for backwards compatibility
         },
@@ -67,11 +68,11 @@ export async function registerPlayer(data) {
     });
 
     // Send welcome email (don't wait for it, don't fail registration if email fails)
-    sendWelcomeEmail(email, name, playerId).catch(err => {
+    sendWelcomeEmail(email, name, memberId).catch(err => {
       console.error('Failed to send welcome email:', err);
     });
 
-    return { success: true, playerId };
+    return { success: true, memberId };
   } catch (error) {
     console.error("Registration error:", error);
     return { error: "Failed to register. Please try again." };

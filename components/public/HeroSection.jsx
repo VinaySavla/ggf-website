@@ -23,10 +23,10 @@ export default function HeroSection() {
                 View Events
               </Link>
               <Link
-                href="/register"
+                href="/about"
                 className="bg-white text-primary hover:bg-gray-100 px-8 py-3 rounded-full font-semibold text-center transition"
               >
-                Join Us Today
+                About Us
               </Link>
             </div>
           </div>

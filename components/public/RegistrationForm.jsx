@@ -10,7 +10,7 @@ import Image from "next/image";
 import { submitRegistration } from "@/actions/event.actions";
 
 // Mandatory field IDs that are auto-filled from user profile
-const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "profileImage"];
+const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "profileImage", "gender"];
 
 export default function RegistrationForm({ event }) {
   const router = useRouter();
@@ -41,6 +41,7 @@ export default function RegistrationForm({ event }) {
         email: session.user.email || "",
         mobile: session.user.mobile || "",
         profileImage: session.user.photo || "",
+        gender: session.user.gender || "",
       }));
     }
   }, [session]);
@@ -165,6 +166,13 @@ export default function RegistrationForm({ event }) {
       return;
     }
 
+    // Validate gender - must be set in profile
+    if (!session.user.gender) {
+      toast.error("Please update your profile with your gender before registering");
+      router.push(`/profile?callbackUrl=/events/${event.slug}`);
+      return;
+    }
+
     // Validate payment fields for paid events
     if (event.isPaid) {
       if (!paymentData.transactionId.trim()) {
@@ -183,6 +191,7 @@ export default function RegistrationForm({ event }) {
       name: session.user.name,
       email: session.user.email,
       mobile: session.user.mobile || formData.mobile,
+      gender: session.user.gender,
       userId: session.user.id,
     };
 
@@ -472,8 +481,36 @@ export default function RegistrationForm({ event }) {
       {/* Info about auto-filled fields */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
         <p className="font-medium">ℹ️ Your profile information is auto-filled</p>
-        <p className="text-blue-600 mt-1">Name, Email, and Phone are pre-filled from your account and cannot be edited here.</p>
+        <p className="text-blue-600 mt-1">Name, Email, Phone, and Gender are pre-filled from your account and cannot be edited here.</p>
       </div>
+
+      {/* Gender Display - Mandatory field from profile */}
+      {session?.user && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Gender <span className="text-red-500">*</span>
+            <span className="text-xs text-gray-500 ml-2">(from your profile)</span>
+          </label>
+          {session.user.gender ? (
+            <input
+              type="text"
+              value={session.user.gender}
+              disabled
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+            />
+          ) : (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-sm text-red-700">
+                Gender not set in your profile.{" "}
+                <Link href={`/profile?callbackUrl=/events/${event.slug}`} className="underline font-medium">
+                  Update your profile
+                </Link>{" "}
+                to continue.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
       
       {formSchema.map((field) => {
         const isMandatoryField = MANDATORY_FIELD_IDS.includes(field.id);

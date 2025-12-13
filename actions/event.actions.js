@@ -14,7 +14,12 @@ export async function createEvent(data) {
       return { error: "Unauthorized" };
     }
 
-    const { title, description, type, eventDate, venue, isPaid, upiQrImage, isActive, formSchema, organizerId, sportIds } = data;
+    const { 
+      title, description, eligibility, type, tournamentType, eventDate, venue, 
+      isPaid, upiQrImage, isActive, formSchema, organizerId, sportIds,
+      registrationStartDate, registrationEndDate,
+      registrationCountType, maxTotalRegistrations, maxMaleRegistrations, maxFemaleRegistrations
+    } = data;
 
     // Generate unique slug
     let slug = generateSlug(title);
@@ -33,14 +38,23 @@ export async function createEvent(data) {
       data: {
         title,
         description,
+        eligibility,
         slug,
         type,
+        tournamentType: type === "Tournament" ? tournamentType : null,
         eventDate: eventDate || null,
         venue,
+        village,
         isPaid,
         upiQrImage: isPaid ? upiQrImage : null,
         isActive,
         formSchema: formSchema || [],
+        registrationStartDate: registrationStartDate || null,
+        registrationEndDate: registrationEndDate || null,
+        registrationCountType: registrationCountType || "common",
+        maxTotalRegistrations: maxTotalRegistrations || null,
+        maxMaleRegistrations: maxMaleRegistrations || null,
+        maxFemaleRegistrations: maxFemaleRegistrations || null,
         ...(type === "Tournament" && {
           tournament: {
             create: {
@@ -86,7 +100,12 @@ export async function updateEvent(id, data) {
       return { error: "You don't have permission to edit this event" };
     }
 
-    const { title, description, type, eventDate, venue, isPaid, upiQrImage, isActive, formSchema, organizerId, sportIds } = data;
+    const { 
+      title, description, eligibility, type, tournamentType, eventDate, venue, 
+      isPaid, upiQrImage, isActive, formSchema, organizerId, sportIds,
+      registrationStartDate, registrationEndDate,
+      registrationCountType, maxTotalRegistrations, maxMaleRegistrations, maxFemaleRegistrations
+    } = data;
 
     // Generate new slug if title changed
     let slug = event.slug;
@@ -107,14 +126,23 @@ export async function updateEvent(id, data) {
         data: {
           title,
           description,
+          eligibility,
           slug,
           type,
+          tournamentType: type === "Tournament" ? tournamentType : null,
           eventDate: eventDate || null,
           venue,
+          village,
           isPaid,
           upiQrImage: isPaid ? upiQrImage : null,
           isActive,
           formSchema: formSchema || [],
+          registrationStartDate: registrationStartDate || null,
+          registrationEndDate: registrationEndDate || null,
+          registrationCountType: registrationCountType || "common",
+          maxTotalRegistrations: maxTotalRegistrations || null,
+          maxMaleRegistrations: maxMaleRegistrations || null,
+          maxFemaleRegistrations: maxFemaleRegistrations || null,
         },
       });
 
@@ -214,10 +242,57 @@ export async function submitRegistration(data) {
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },
+      include: {
+        registrations: {
+          select: { gender: true }
+        }
+      }
     });
 
     if (!event || !event.isActive) {
       return { error: "Event not found or no longer active" };
+    }
+
+    // Check registration window
+    const now = new Date();
+    if (event.registrationStartDate && now < new Date(event.registrationStartDate)) {
+      return { error: "Registration has not started yet" };
+    }
+    if (event.registrationEndDate && now > new Date(event.registrationEndDate)) {
+      return { error: "Registration window has closed" };
+    }
+
+    // Get full user data including mobile and gender
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, name: true, email: true, mobile: true, gender: true },
+    });
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    // Get gender from user profile
+    const userGender = user.gender;
+    if (!userGender) {
+      return { error: "Please update your profile with your gender before registering" };
+    }
+
+    // Check registration limits
+    if (event.registrationCountType === "common" && event.maxTotalRegistrations) {
+      if (event.registrations.length >= event.maxTotalRegistrations) {
+        return { error: "Registration limit has been reached" };
+      }
+    } else if (event.registrationCountType === "separate") {
+      const maleCount = event.registrations.filter(r => r.gender === "Male").length;
+      const femaleCount = event.registrations.filter(r => r.gender === "Female").length;
+
+      if (userGender === "Male" && event.maxMaleRegistrations && maleCount >= event.maxMaleRegistrations) {
+        return { error: "Male registration limit has been reached" };
+      }
+      if (userGender === "Female" && event.maxFemaleRegistrations && femaleCount >= event.maxFemaleRegistrations) {
+        return { error: "Female registration limit has been reached" };
+      }
     }
 
     // For paid events, require payment proof
@@ -228,16 +303,6 @@ export async function submitRegistration(data) {
       if (!paymentScreenshot) {
         return { error: "Payment screenshot is required for paid events" };
       }
-    }
-
-    // Get full user data including mobile
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { id: true, name: true, email: true, mobile: true },
-    });
-
-    if (!user) {
-      return { error: "User not found" };
     }
 
     // Check if already registered (by userId or email)
@@ -255,8 +320,8 @@ export async function submitRegistration(data) {
       return { error: "You have already registered for this event" };
     }
 
-    // Get player ID for the email
-    const playerProfile = await prisma.masterPlayer.findUnique({
+    // Get member ID for the email
+    const userProfile = await prisma.masterPlayer.findUnique({
       where: { userId: user.id },
       select: { playerId: true },
     });
@@ -265,12 +330,14 @@ export async function submitRegistration(data) {
     const registration = await prisma.registration.create({
       data: {
         eventId,
+        gender: userGender,
         userData: {
           ...userData,
           userId: user.id,
           name: user.name,
           email: user.email,
           mobile: user.mobile || userData.mobile,
+          gender: userGender,
         },
         paymentStatus: event.isPaid ? "pending" : "paid",
         // Include payment info for paid events
@@ -286,7 +353,7 @@ export async function submitRegistration(data) {
       user.email,
       user.name,
       event.title,
-      playerProfile?.playerId || 'N/A',
+      userProfile?.playerId || 'N/A',
       event.isPaid
     ).catch(err => {
       console.error('Failed to send registration email:', err);

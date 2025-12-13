@@ -156,7 +156,7 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
                     <h4 className="font-medium text-gray-900 mb-2">Player Profile</h4>
                     <p className="text-sm text-gray-600 mb-3">This user has a registered player profile.</p>
                     <Link
-                      href={`/admin/players/${playerId}`}
+                      href={`/admin/user/${playerId}`}
                       className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-600 transition text-sm"
                       onClick={() => setShowDetails(false)}
                     >
@@ -234,12 +234,12 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
             <Eye className="w-5 h-5" />
           </button>
           
-          {/* View Player Profile - Only if player exists */}
+          {/* View User Profile - Only if player exists */}
           {playerId && (
             <Link
-              href={`/admin/players/${playerId}`}
+              href={`/admin/user/${playerId}`}
               className="p-2 text-primary hover:bg-primary/10 rounded-lg transition"
-              title="View Player Profile"
+              title="View User Profile"
             >
               <User className="w-5 h-5" />
             </Link>

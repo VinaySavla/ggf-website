@@ -123,7 +123,7 @@ export default async function UsersPage() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <p className="text-gray-600">
             {players.length} registered players in the system.{" "}
-            <Link href="/admin/players" className="text-primary hover:underline">
+            <Link href="/admin/user" className="text-primary hover:underline">
               View all players
             </Link>
           </p>

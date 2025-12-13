@@ -81,7 +81,7 @@ export default async function AdminDashboard() {
       value: stats.totalPlayers,
       icon: Users,
       color: "bg-green-500",
-      href: "/admin/players",
+      href: "/admin/user",
     },
   ];
 

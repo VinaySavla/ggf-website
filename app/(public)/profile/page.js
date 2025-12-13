@@ -37,6 +37,8 @@ export default function ProfilePage() {
     mobile: "",
     bio: "",
     photo: "",
+    gender: "",
+    village: "",
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -74,8 +76,10 @@ export default function ProfilePage() {
         name: result.user.name || "",
         email: result.user.email || "",
         mobile: result.user.mobile || "",
-        bio: result.user.playerProfile?.bio || "",
+        bio: result.user.userProfile?.bio || "",
         photo: result.user.photo || "",
+        gender: result.user.gender || "",
+        village: result.user.village || "",
       });
     } catch (error) {
       toast.error("Failed to load profile");
@@ -158,13 +162,15 @@ export default function ProfilePage() {
         email: formData.email,
         mobile: formData.mobile,
         bio: formData.bio,
+        gender: formData.gender,
+        village: formData.village,
       });
 
       if (result.error) {
         toast.error(result.error);
       } else {
-        // Update the session with new name
-        await update({ name: formData.name });
+        // Update the session with new name, gender, and village
+        await update({ name: formData.name, gender: formData.gender, village: formData.village });
         toast.success("Profile updated successfully");
       }
     } catch (error) {
@@ -329,6 +335,56 @@ export default function ProfilePage() {
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <span className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>Gender</span>
+                  <span className="text-red-500">*</span>
+                </span>
+              </label>
+              <div className="flex gap-4">
+                {["Male", "Female", "Other"].map((gender) => (
+                  <label key={gender} className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value={gender}
+                      checked={formData.gender === gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                      required
+                    />
+                    <span className="ml-2 text-gray-700">{gender}</span>
+                  </label>
+                ))}
+              </div>
+              {!formData.gender && (
+                <p className="text-xs text-red-500 mt-1">Gender is required for event registration</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <span className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>Village</span>
+                  <span className="text-red-500">*</span>
+                </span>
+              </label>
+              <input
+                type="text"
+                value={formData.village}
+                onChange={(e) => setFormData({ ...formData, village: e.target.value })}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="Enter your village name"
+                required
+              />
+              {!formData.village && (
+                <p className="text-xs text-red-500 mt-1">Village is required for event registration</p>
+              )}
             </div>
 
             <div>

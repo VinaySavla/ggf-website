@@ -15,12 +15,14 @@ model User {
   mobile    String?   @unique
   password  String    // Hashed
   photo     String?   // Profile picture URL
-  role      String    @default("PLAYER") // "PLAYER", "ORGANIZER", "SUPER_ADMIN"
+  gender    String?   // "Male", "Female", "Other"
+  village   String?   // User's village name
+  role      String    @default("USER") // "USER", "ORGANIZER", "SUPER_ADMIN"
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  playerProfile      MasterPlayer?
+  userProfile        MasterPlayer?
   createdEvents      TournamentMaster[]
   passwordResetToken PasswordResetToken?
 
@@ -106,13 +108,26 @@ model PlayerStatsRecord {
 model Event {
   id              String   @id @default(cuid())
   title           String
-  description     String?
+  description     String?  @db.Text // WYSIWYG HTML content
+  eligibility     String?  @db.Text // WYSIWYG HTML content
   slug            String   @unique
-  type            String   // "General" or "Tournament"
+  type            String   // "Seminar", "Competition", "Tournament"
+  tournamentType  String?  // "General" or "Village Specific" - only for Tournament type
   isPaid          Boolean  @default(false)
   upiQrImage      String?  // URL to uploaded QR
   eventDate       DateTime?
   venue           String?
+  village         String?   // Village name for the event
+  
+  // Registration window
+  registrationStartDate DateTime?
+  registrationEndDate   DateTime?
+  
+  // Registration limits
+  registrationCountType String  @default("common") // "common" or "separate"
+  maxMaleRegistrations  Int?    // Only used if registrationCountType is "separate"
+  maxFemaleRegistrations Int?   // Only used if registrationCountType is "separate"
+  maxTotalRegistrations Int?    // Only used if registrationCountType is "common"
   
   // Dynamic form definition
   formSchema      Json     @default("[]")
@@ -200,6 +215,9 @@ model Registration {
   
   // Dynamic form answers
   userData        Json
+  
+  // Gender for registration counts
+  gender          String?  // "Male", "Female", "Other" - extracted from userData or user profile
   
   paymentStatus   String   @default("pending") // "pending", "paid", "rejected"
   transactionId   String?

@@ -108,7 +108,7 @@ export default async function RegistrationsPage({ searchParams }) {
                       <div>
                         {reg.playerId ? (
                           <Link 
-                            href={`/admin/players/${reg.playerId}`}
+                            href={`/admin/user/${reg.playerId}`}
                             className="font-medium text-primary hover:underline"
                           >
                             {reg.userData?.name || "N/A"}

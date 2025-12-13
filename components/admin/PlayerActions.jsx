@@ -79,7 +79,7 @@ export default function PlayerActions({ player, usersWithoutPlayers = [], canDel
           />
           <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-48 z-20">
             <Link
-              href={`/admin/players/${player.playerId}`}
+              href={`/admin/user/${player.playerId}`}
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               onClick={() => setIsOpen(false)}
             >
