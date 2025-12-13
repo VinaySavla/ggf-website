@@ -1,0 +1,242 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. AUTH & USERS
+model User {
+  id        String    @id @default(cuid())
+  name      String?
+  email     String?   @unique
+  mobile    String?   @unique
+  password  String    // Hashed
+  photo     String?   // Profile picture URL
+  role      String    @default("PLAYER") // "PLAYER", "ORGANIZER", "SUPER_ADMIN"
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  playerProfile      MasterPlayer?
+  createdEvents      TournamentMaster[]
+  passwordResetToken PasswordResetToken?
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expires   DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+// 2. MASTER PLAYER & STATS
+model MasterPlayer {
+  id        String    @id @default(cuid())
+  playerId  String    @unique // The "GGF-GSC-..." ID
+  
+  // User link is optional - players can exist without a user account
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?   @unique
+  
+  // Player details (used when no user account linked)
+  name      String?
+  email     String?
+  mobile    String?
+  
+  photo     String?
+  bio       String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  statsRecords       PlayerStatsRecord[]
+  tournamentRosters  TournamentRoster[]
+
+  @@map("master_players")
+}
+
+model PlayerIdSequence {
+  yearMonth   String  @id @unique // "YY-MM", e.g., "25-11"
+  lastIndex   Int
+
+  @@map("player_id_sequences")
+}
+
+model Sport {
+  id            String               @id @default(cuid())
+  name          String               @unique // "Turf Cricket", "Kabaddi"
+  description   String?
+  createdAt     DateTime             @default(now())
+  
+  statsRecords  PlayerStatsRecord[]
+  events        EventSport[]
+
+  @@map("sports")
+}
+
+model PlayerStatsRecord {
+  id              String            @id @default(cuid())
+  player          MasterPlayer      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId        String
+  tournament      TournamentMaster? @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId    String?
+  sport           Sport             @relation(fields: [sportId], references: [id])
+  sportId         String
+  
+  // Optional label for general stats (e.g., "Season 2024", "Career Stats")
+  label           String?
+  
+  // Polymorphic stats, e.g., { "runs": 100, "wickets": 5 }
+  statsJson       Json
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("player_stats_records")
+}
+
+// 3. EVENTS & TOURNAMENTS
+model Event {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  slug            String   @unique
+  type            String   // "General" or "Tournament"
+  isPaid          Boolean  @default(false)
+  upiQrImage      String?  // URL to uploaded QR
+  eventDate       DateTime?
+  venue           String?
+  
+  // Dynamic form definition
+  formSchema      Json     @default("[]")
+  
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  registrations   Registration[]
+  tournament      TournamentMaster?
+  sports          EventSport[]
+
+  @@map("events")
+}
+
+model EventSport {
+  id        String   @id @default(cuid())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  sport     Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  sportId   String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, sportId])
+  @@map("event_sports")
+}
+
+model TournamentMaster {
+  id           String             @id @default(cuid())
+  event        Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      String             @unique
+  organizer    User?              @relation(fields: [organizerId], references: [id])
+  organizerId  String?
+  sportId      String?
+  
+  startDate    DateTime?
+  endDate      DateTime?
+  status       String             @default("upcoming") // upcoming, ongoing, completed
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  teams        Team[]
+  rosters      TournamentRoster[]
+  statsRecords PlayerStatsRecord[]
+
+  @@map("tournament_masters")
+}
+
+model Team {
+  id             String             @id @default(cuid())
+  name           String
+  logo           String?
+  color          String?
+  tournament     TournamentMaster   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId   String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  
+  rosters        TournamentRoster[]
+
+  @@map("teams")
+}
+
+model TournamentRoster {
+  id             String           @id @default(cuid())
+  player         MasterPlayer     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId       String
+  tournament     TournamentMaster @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId   String
+  team           Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId         String
+  auctionPrice   Int              @default(0)
+  role           String?          // e.g., "Captain", "Vice-Captain"
+  createdAt      DateTime         @default(now())
+
+  @@unique([playerId, tournamentId])
+  @@map("tournament_rosters")
+}
+
+// 4. REGISTRATIONS
+model Registration {
+  id              String   @id @default(cuid())
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId         String
+  
+  // Dynamic form answers
+  userData        Json
+  
+  paymentStatus   String   @default("pending") // "pending", "paid", "rejected"
+  transactionId   String?
+  paymentSs       String?  // URL to uploaded screenshot
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("registrations")
+}
+
+// 5. STATIC CONTENT
+model GalleryCollection {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  coverImage  String?
+  sortOrder   Int            @default(0)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  images      GalleryImage[]
+
+  @@map("gallery_collections")
+}
+
+model GalleryImage {
+  id           String            @id @default(cuid())
+  title        String?
+  description  String?
+  imageUrl     String
+  sortOrder    Int               @default(0)
+  createdAt    DateTime          @default(now())
+  
+  collection   GalleryCollection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String?
+
+  @@map("gallery_images")
+}
