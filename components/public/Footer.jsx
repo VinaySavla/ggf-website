@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
+import { Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -53,11 +53,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/players" className="hover:text-primary transition">
-                  Players
-                </Link>
-              </li>
-              <li>
                 <Link href="/gallery" className="hover:text-primary transition">
                   Gallery
                 </Link>
@@ -78,14 +73,6 @@ export default function Footer() {
                 <Mail className="w-4 h-4 text-primary" />
                 <span>contact@ggf.com</span>
               </li>
-              <li className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-primary" />
-                <span>+91 98765 43210</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <MapPin className="w-4 h-4 text-primary mt-1" />
-                <span>Godhra, Gujarat, India</span>
-              </li>
             </ul>
             
             {/* Social Links */}
@@ -98,6 +85,9 @@ export default function Footer() {
               </a>
               <a href="#" className="text-gray-400 hover:text-primary transition">
                 <Twitter className="w-5 h-5" />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-red-500 transition">
+                <Youtube className="w-5 h-5" />
               </a>
             </div>
           </div>

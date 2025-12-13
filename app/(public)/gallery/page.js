@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Camera, Images } from "lucide-react";
+import { Camera, FolderOpen, Images } from "lucide-react";
 
 // Force dynamic rendering since we fetch from database
 export const dynamic = 'force-dynamic';
@@ -18,6 +18,7 @@ async function getGalleryCollections() {
       include: {
         images: {
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+          take: 4, // Get first 4 images for preview
         },
         _count: { select: { images: true } },
       },
@@ -44,53 +45,78 @@ export default async function GalleryPage() {
         </div>
 
         {collections.length > 0 ? (
-          <div className="space-y-16">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {collections.map((collection) => (
-              <section key={collection.id}>
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{collection.name}</h2>
-                    {collection.description && (
-                      <p className="text-gray-500 mt-1">{collection.description}</p>
-                    )}
-                  </div>
-                  <span className="text-sm text-gray-400">
-                    {collection._count.images} photos
-                  </span>
-                </div>
-
-                {collection.images.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {collection.images.map((image) => (
-                      <div
-                        key={image.id}
-                        className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer"
-                      >
-                        <Image
-                          src={image.imageUrl}
-                          alt={image.title || 'Gallery image'}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
-                        {image.title && (
-                          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <p className="text-white text-sm font-medium">{image.title}</p>
-                            {image.description && (
-                              <p className="text-white/70 text-xs mt-1">{image.description}</p>
-                            )}
+              <Link
+                key={collection.id}
+                href={`/gallery/${collection.slug}`}
+                className="group"
+              >
+                <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
+                  {/* Folder Preview - Stack of images */}
+                  <div className="relative aspect-[4/3] bg-gray-100">
+                    {collection.images.length > 0 ? (
+                      <>
+                        {/* Background images for stack effect */}
+                        {collection.images.length > 2 && (
+                          <div className="absolute inset-0 transform translate-x-2 translate-y-2 rounded-lg overflow-hidden opacity-30">
+                            <Image
+                              src={collection.images[2]?.imageUrl || collection.images[0].imageUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
                           </div>
                         )}
+                        {collection.images.length > 1 && (
+                          <div className="absolute inset-0 transform translate-x-1 translate-y-1 rounded-lg overflow-hidden opacity-60">
+                            <Image
+                              src={collection.images[1]?.imageUrl || collection.images[0].imageUrl}
+                              alt=""
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        )}
+                        {/* Main preview image */}
+                        <div className="absolute inset-0 rounded-lg overflow-hidden">
+                          <Image
+                            src={collection.coverImage || collection.images[0].imageUrl}
+                            alt={collection.name}
+                            fill
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <FolderOpen className="w-16 h-16 text-gray-300" />
                       </div>
-                    ))}
+                    )}
+
+                    {/* Photo count badge */}
+                    <div className="absolute bottom-3 right-3 px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full">
+                      <span className="text-white text-sm font-medium flex items-center gap-1">
+                        <Images className="w-4 h-4" />
+                        {collection._count.images}
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-xl p-8 text-center">
-                    <Images className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">No photos in this collection yet.</p>
+
+                  {/* Collection Info */}
+                  <div className="p-4">
+                    <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">
+                      {collection.name}
+                    </h3>
+                    {collection.description && (
+                      <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                        {collection.description}
+                      </p>
+                    )}
                   </div>
-                )}
-              </section>
+                </div>
+              </Link>
             ))}
           </div>
         ) : (
