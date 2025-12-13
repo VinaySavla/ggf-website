@@ -1,90 +1,95 @@
-# Godhra Graduates Forum (GGF) WebsiteThis is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Godhara Graduates Forum
 
+A modern, full-featured community management platform for Godhra Graduates Forum (GGF) - organizing educational, sports, and fellowship events in collaboration with Godhra Sports Club.
 
+## 🚀 Features
 
-A modern, responsive website for Godhra Graduates Forum - a community trust organizing educational, sports, and fellowship events in collaboration with Godhra Sports Club.## Getting Started
+### Public Portal
+- **Homepage**: Hero section, featured events, about GGF, statistics showcase
+- **Events**: Browse all events, detailed event pages with custom registration forms
+- **Gallery**: Photo collections organized by events/occasions
+- **User Profiles**: Personal dashboard with registration history
+- **Authentication**: Email/password login with password reset functionality
 
+### Admin Panel
+- **Dashboard**: Overview statistics (users, events, registrations)
+- **Event Management**: Create/edit events with custom form builder (Google Forms-like)
+- **Registration Management**: View, approve, export registrations with payment tracking
+- **Team Management**: Create teams, manage rosters with auction pricing
+- **User Management**: View all users, user profiles, create organizers (Super Admin)
+- **Gallery Management**: Create collections, upload/manage photos (Super Admin)
+- **User Stats**: Track and record player statistics (Super Admin)
+- **Sports Management**: Manage sports categories (Super Admin)
+- **Role-Based Access**: Super Admin and Organizer roles with different permissions
 
+### Key Capabilities
+- **Custom Form Builder**: Dynamic registration forms with mandatory fields (name, email, mobile, gender, profile image)
+- **Payment Integration**: UPI QR code support with payment proof upload
+- **Registration Limits**: Gender-based or common registration caps
+- **Rich Text Editor**: WYSIWYG event descriptions
+- **File Uploads**: Profile photos, payment proofs, team logos, gallery images
+- **Responsive Design**: Mobile-first, fully responsive across all devices
 
-## 🚀 FeaturesFirst, run the development server:
+## 🛠️ Tech Stack
 
-
-
-- **Homepage**: Hero section, sponsors carousel, about GGF, upcoming events```bash
-
-- **Cricket Tournament**: Player registration, auction countdown, player profilesnpm run dev
-
-- **Events**: Browse all events, detailed event pages, registration forms# or
-
-- **Sponsors**: Sponsor showcase and sponsorship informationyarn dev
-
-- **Directus Integration**: CMS backend for dynamic content management# or
-
-- **Responsive Design**: Mobile-first, fully responsive across all devicespnpm dev
-
-- **Modern UI**: Built with Tailwind CSS, clean and accessible# or
-
-bun dev
-
-## 🛠️ Tech Stack```
-
-
-
-- **Framework**: Next.js 15 (App Router)Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
+- **Framework**: Next.js 16 (App Router)
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: Auth.js v5 (NextAuth)
 - **Styling**: Tailwind CSS
-
-- **Language**: JavaScript (no TypeScript)You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-- **API Client**: Axios
-
-- **CMS**: DirectusThis project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-- **Fonts**: Poppins (Google Fonts)
-
-## Learn More
+- **UI Components**: Radix UI primitives
+- **Rich Text**: react-quill-new
+- **Icons**: Lucide React
+- **Notifications**: Sonner (toast notifications)
+- **Language**: JavaScript
 
 ## 📋 Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
-
 - Node.js 18+ and npm
+- PostgreSQL database
+- Modern web browser
 
-- Directus instance (local or cloud)- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+## 🔧 Installation
 
-- Modern web browser- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-
-
-## 🔧 InstallationYou can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-
-
-1. **Install dependencies**## Deploy on Vercel
-
+1. **Clone and install dependencies**
    ```bash
-
-   npm installThe easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
+   git clone <repository-url>
+   cd ggf-website
+   npm install
    ```
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 2. **Set up environment variables**
    
-   Update `.env.local`:
+   Create `.env` file:
    ```env
-   NEXT_PUBLIC_DIRECTUS_URL=https://your-directus-instance.com
-   NEXT_PUBLIC_DIRECTUS_TOKEN=your-directus-token-here
-   DIRECTUS_ADMIN_TOKEN=your-admin-token-here
+   # Database
+   DATABASE_URL="postgresql://user:password@localhost:5432/ggfdb"
+   
+   # Auth.js
+   AUTH_SECRET="your-auth-secret-here"
+   
+   # Email (for password reset)
+   EMAIL_SERVER_HOST="smtp.gmail.com"
+   EMAIL_SERVER_PORT=587
+   EMAIL_SERVER_USER="your-email@gmail.com"
+   EMAIL_SERVER_PASSWORD="your-app-password"
+   EMAIL_FROM="GGF <noreply@ggfgodhra.com>"
+   
+   # App URL
+   NEXT_PUBLIC_APP_URL="http://localhost:3000"
    ```
 
-3. **Run the development server**
+3. **Set up the database**
+   ```bash
+   npm run db:push    # Push schema to database
+   npm run db:seed    # Seed initial data (optional)
+   ```
+
+4. **Run the development server**
    ```bash
    npm run dev
    ```
 
-4. **Open your browser**
+5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## 📁 Project Structure
@@ -92,32 +97,63 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 ```
 ggf-website/
 ├── app/
-│   ├── layout.js              # Root layout with Navbar & Footer
-│   ├── page.js                # Homepage
-│   ├── tournament/
-│   │   ├── page.js            # Tournament overview
-│   │   └── players/
-│   │       ├── page.js        # All players
-│   │       └── [id]/page.js   # Player profile
-│   ├── events/
-│   │   ├── page.js            # All events
-│   │   └── [slug]/page.js     # Event details
-│   └── sponsors/
-│       └── page.js            # Sponsors page
+│   ├── (admin)/                    # Admin route group
+│   │   ├── admin/
+│   │   │   ├── page.js             # Dashboard
+│   │   │   ├── events/             # Event management
+│   │   │   ├── registrations/      # Registration management
+│   │   │   ├── teams/              # Team & roster management
+│   │   │   ├── user/               # User profiles
+│   │   │   ├── users/              # User creation (Super Admin)
+│   │   │   ├── gallery/            # Gallery management (Super Admin)
+│   │   │   ├── stats/              # User stats (Super Admin)
+│   │   │   ├── sports/             # Sports management (Super Admin)
+│   │   │   └── settings/           # Site settings
+│   │   └── layout.js               # Admin layout with sidebar
+│   ├── (public)/                   # Public route group
+│   │   ├── page.js                 # Homepage
+│   │   ├── events/                 # Event listing & details
+│   │   ├── gallery/                # Public gallery
+│   │   ├── about/                  # About page
+│   │   ├── profile/                # User profile
+│   │   ├── login/                  # Authentication
+│   │   ├── register/               # User registration
+│   │   └── user/[id]/              # Public user profiles
+│   ├── api/                        # API routes
+│   │   ├── auth/                   # Auth.js endpoints
+│   │   └── upload/                 # File upload endpoint
+│   ├── layout.js                   # Root layout
+│   └── globals.css                 # Global styles
 ├── components/
-│   ├── Navbar.jsx
-│   ├── Footer.jsx
-│   ├── HeroSection.jsx
-│   ├── SponsorCarousel.jsx
-│   ├── EventCard.jsx
-│   ├── PlayerCard.jsx
-│   ├── RegistrationForm.jsx
-│   └── UpcomingEvents.jsx
+│   ├── admin/                      # Admin components
+│   │   ├── AdminSidebar.jsx        # Navigation sidebar
+│   │   ├── EventForm.jsx           # Event form with form builder
+│   │   ├── RosterManager.jsx       # Team roster management
+│   │   ├── RichTextEditor.jsx      # WYSIWYG editor
+│   │   └── ...
+│   ├── public/                     # Public components
+│   │   ├── Navbar.jsx
+│   │   ├── Footer.jsx
+│   │   ├── HeroSection.jsx
+│   │   ├── RegistrationForm.jsx
+│   │   └── ...
+│   └── Providers.jsx               # Context providers
+├── actions/                        # Server actions
+│   ├── auth.actions.js             # Authentication actions
+│   ├── event.actions.js            # Event CRUD
+│   ├── registration.actions.js     # Registration management
+│   ├── team.actions.js             # Team & roster actions
+│   ├── gallery.actions.js          # Gallery actions
+│   └── ...
 ├── lib/
-│   └── directus.js            # Directus API utilities
+│   ├── auth.js                     # Auth.js configuration
+│   ├── prisma.js                   # Prisma client
+│   └── utils.js                    # Utility functions
+├── prisma/
+│   ├── schema.prisma               # Database schema
+│   └── seed.js                     # Database seeder
 └── public/
-    ├── sponsors/              # Sponsor photos
-    └── players/               # Player photos
+    └── uploads/                    # Uploaded files
 ```
 
 ## 🎨 Design System
@@ -129,78 +165,70 @@ ggf-website/
 ### Typography
 - **Font**: Poppins (Google Fonts)
 
-## 📊 Directus Collections
+## 📊 Database Schema (Key Models)
 
-### 1. Events Collection
-```
-Fields:
-- id (auto)
-- title (string)
-- slug (string, unique)
-- description (text)
-- date (datetime)
-- location (string)
-- category (dropdown: Sports, Education, Games, Medical, Environment, Fellowship)
-```
+### User & Authentication
+- **User**: id, name, email, password, role (USER/ORGANIZER/SUPER_ADMIN), mobile, village, gender
+- **MasterPlayer**: User profile with playerId (GGF-GSC-YYMM-XXX format), bio, photo, stats
 
-### 2. Sponsors Collection
-```
-Fields:
-- id (auto)
-- name (string)
-- photo (image)
-- description (text)
-- contribution (dropdown: Gold, Silver, Bronze)
-- contribution_amount (integer)
-```
+### Events & Registrations
+- **Event**: title, slug, description, type (General/Tournament), formSchema, registration settings
+- **TournamentMaster**: Tournament-specific data linked to events
+- **Registration**: Event registrations with userData (JSON), payment status
 
-### 3. Players Collection
-```
-Fields:
-- id (auto)
-- name (string)
-- age (integer)
-- role (dropdown: Batsman, Bowler, All-rounder, Wicket-keeper)
-- photo (image)
-- status (dropdown: Available, Sold)
-- email (string)
-- phone (string)
-- address (text)
-```
+### Teams & Rosters
+- **Team**: name, logo, gender, linked to tournament
+- **TournamentRoster**: Player assignments to teams with auction price, role
 
-### 4. Registrations Collection
-```
-Fields:
-- id (auto)
-- name (string)
-- email (string)
-- phone (string)
-- age (integer)
-- address (text)
-- date_created (datetime, auto)
+### Gallery
+- **GalleryCollection**: name, description, coverImage
+- **GalleryImage**: url, caption, linked to collection
+
+## 👥 User Roles
+
+| Feature | User | Organizer | Super Admin |
+|---------|------|-----------|-------------|
+| View Events | ✅ | ✅ | ✅ |
+| Register for Events | ✅ | ✅ | ✅ |
+| View Own Profile | ✅ | ✅ | ✅ |
+| Admin Dashboard | ❌ | ✅ | ✅ |
+| Manage Own Events | ❌ | ✅ | ✅ |
+| Manage All Events | ❌ | ❌ | ✅ |
+| View All Users | ❌ | ❌ | ✅ |
+| Manage Gallery | ❌ | ❌ | ✅ |
+| User Stats | ❌ | ❌ | ✅ |
+| Create Organizers | ❌ | ❌ | ✅ |
+| Site Settings | ❌ | ❌ | ✅ |
+
+## 📝 Scripts
+
+```bash
+npm run dev        # Start development server
+npm run build      # Build for production
+npm start          # Start production server
+npm run lint       # Run ESLint
+npm run db:push    # Push Prisma schema to database
+npm run db:migrate # Run database migrations
+npm run db:seed    # Seed database
+npm run db:studio  # Open Prisma Studio
 ```
 
 ## 🚀 Deployment
 
-### Vercel
+### Vercel (Recommended)
 1. Push code to GitHub
 2. Import to Vercel
 3. Add environment variables
 4. Deploy!
 
-## 📝 Scripts
-
-```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm start        # Start production server
-```
+### Self-hosted
+1. Build the project: `npm run build`
+2. Set environment variables
+3. Run: `npm start`
 
 ## 📧 Contact
 
-- **Email**: info@ggfgodhra.com
-- **Phone**: +91 9876543210
-- **Location**: Godhra, Gujarat, India
+- **Organization**: Godhra Graduates Forum
 
 ---
 
