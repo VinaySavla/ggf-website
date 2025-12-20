@@ -48,8 +48,8 @@ export async function POST(request) {
     const filepath = path.join(uploadDir, filename)
     await writeFile(filepath, buffer)
 
-    // Return public URL
-    const url = `/${folder}/${filename}`
+    // Return API URL for dynamic file serving (works in production)
+    const url = `/api/files/${folder}/${filename}`
 
     return NextResponse.json({ url, filename, path: folder })
   } catch (error) {
