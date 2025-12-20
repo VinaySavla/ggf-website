@@ -14,36 +14,36 @@ const nextConfig = {
     },
   },
   // Rewrite uploaded file paths to API route for dynamic serving in production
-  // Only rewrite paths with file extensions to avoid conflicting with page routes
+  // These folders don't have page routes, so we can safely rewrite all paths
   async rewrites() {
     return [
       {
-        source: '/profiles/:filename(.*\\..+)',
-        destination: '/api/files/profiles/:filename',
+        source: '/profiles/:path*',
+        destination: '/api/files/profiles/:path*',
       },
       {
-        source: '/events/:path*/:filename(.*\\..+)',
-        destination: '/api/files/events/:path*/:filename',
+        source: '/uploads/:path*',
+        destination: '/api/files/uploads/:path*',
       },
       {
-        source: '/uploads/:filename(.*\\..+)',
-        destination: '/api/files/uploads/:filename',
+        source: '/sponsors/:path*',
+        destination: '/api/files/sponsors/:path*',
       },
       {
-        source: '/sponsors/:filename(.*\\..+)',
-        destination: '/api/files/sponsors/:filename',
+        source: '/gallery/:path*',
+        destination: '/api/files/gallery/:path*',
       },
       {
-        source: '/gallery/:filename(.*\\..+)',
-        destination: '/api/files/gallery/:filename',
+        source: '/teams/:path*',
+        destination: '/api/files/teams/:path*',
       },
       {
-        source: '/teams/:filename(.*\\..+)',
-        destination: '/api/files/teams/:filename',
+        source: '/payments/:path*',
+        destination: '/api/files/payments/:path*',
       },
       {
-        source: '/payments/:filename(.*\\..+)',
-        destination: '/api/files/payments/:filename',
+        source: '/players/:path*',
+        destination: '/api/files/players/:path*',
       },
     ]
   },

@@ -8,40 +8,38 @@ export async function GET(request, { params }) {
     const { path: pathSegments } = await params
     const filePath = pathSegments.join('/')
     
-    console.log('File request:', filePath)
-    console.log('Path segments:', pathSegments)
-    
     // Security: prevent directory traversal
     if (filePath.includes('..')) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 })
     }
 
-    // Only allow specific folders
-    const allowedFolders = ['profiles', 'events', 'uploads', 'sponsors', 'players', 'gallery', 'teams', 'payments', 'api']
+    // Only allow specific root folders for uploads
+    const allowedFolders = ['profiles', 'events', 'uploads', 'sponsors', 'players', 'gallery', 'teams', 'payments']
     const firstSegment = pathSegments[0]
     
     // Handle paths that might start with 'api/files' due to double rewrite
     let actualPath = filePath
     if (firstSegment === 'api' && pathSegments[1] === 'files') {
-      // Strip 'api/files' prefix if present
       actualPath = pathSegments.slice(2).join('/')
-      console.log('Stripped api/files, actual path:', actualPath)
     }
     
     const actualFirstSegment = actualPath.split('/')[0]
-    if (!allowedFolders.includes(actualFirstSegment) && actualFirstSegment !== 'api') {
-      console.log('Folder not allowed:', actualFirstSegment)
+    if (!allowedFolders.includes(actualFirstSegment)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    // Ensure the path ends with a file (has extension)
+    const lastSegment = actualPath.split('/').pop()
+    if (!lastSegment || !lastSegment.includes('.') || lastSegment.startsWith('.')) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
     const absolutePath = path.join(process.cwd(), 'public', actualPath)
-    console.log('Absolute path:', absolutePath)
     
     // Check if file exists
     try {
       await stat(absolutePath)
     } catch (e) {
-      console.log('File not found at:', absolutePath, e.message)
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
