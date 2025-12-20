@@ -26,6 +26,19 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/admin', req.url))
   }
 
+  // --- BEGIN: File serving logic from middleware.js ---
+  // Only rewrite /events/* if it looks like a file (has extension)
+  function isFilePath(pathname) {
+    const lastSegment = pathname.split('/').pop()
+    return lastSegment && lastSegment.includes('.') && !lastSegment.startsWith('.')
+  }
+  if (pathname.startsWith('/events/') && isFilePath(pathname)) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/api/files' + pathname
+    return NextResponse.rewrite(url)
+  }
+  // --- END: File serving logic ---
+
   return NextResponse.next()
 })
 
@@ -34,5 +47,6 @@ export const config = {
     '/admin/:path*',
     '/login',
     '/register',
+    '/events/:path*', // Add events for file rewrite
   ],
 }
