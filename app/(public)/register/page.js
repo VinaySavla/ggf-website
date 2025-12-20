@@ -75,11 +75,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.photo) {
-      toast.error("Profile photo is required");
-      return;
-    }
-
     if (!formData.gender) {
       toast.error("Please select your gender");
       return;
@@ -138,7 +133,7 @@ export default function RegisterPage() {
             {/* Profile Photo Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profile Photo <span className="text-red-500">*</span>
+                Profile Photo <span className="text-gray-400">(Optional)</span>
               </label>
               <div className="flex items-center justify-center">
                 {formData.photo ? (
