@@ -14,7 +14,7 @@ model User {
   email     String?   @unique
   mobile    String?   @unique
   password  String    // Hashed
-  photo     String?   // Profile picture URL
+  photo     String    // Profile picture URL
   gender    String?   // "Male", "Female", "Other"
   village   String?   // User's village name
   role      String    @default("USER") // "USER", "ORGANIZER", "SUPER_ADMIN"
