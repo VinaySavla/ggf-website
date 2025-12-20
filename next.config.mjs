@@ -41,6 +41,10 @@ const nextConfig = {
         source: '/teams/:filename(.*\\..+)',
         destination: '/api/files/teams/:filename',
       },
+      {
+        source: '/payments/:filename(.*\\..+)',
+        destination: '/api/files/payments/:filename',
+      },
     ]
   },
 }

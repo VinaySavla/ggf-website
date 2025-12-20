@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
     }
 
     // Only allow specific folders
-    const allowedFolders = ['profiles', 'events', 'uploads', 'sponsors', 'players', 'gallery', 'teams', 'api']
+    const allowedFolders = ['profiles', 'events', 'uploads', 'sponsors', 'players', 'gallery', 'teams', 'payments', 'api']
     const firstSegment = pathSegments[0]
     
     // Handle paths that might start with 'api/files' due to double rewrite
