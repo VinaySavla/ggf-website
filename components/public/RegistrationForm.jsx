@@ -10,7 +10,7 @@ import Image from "next/image";
 import { submitRegistration } from "@/actions/event.actions";
 
 // Mandatory field IDs that are auto-filled from user profile
-const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "profileImage", "gender"];
+const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "gender"];
 
 export default function RegistrationForm({ event }) {
   const router = useRouter();

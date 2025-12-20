@@ -43,7 +43,7 @@ const FIELD_TYPES = [
 
 // Mandatory field IDs that cannot be deleted or have their type changed
 // These are auto-filled from user profile during registration
-const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "gender", "profileImage"];
+const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "gender"];
 
 // Initial default fields for new events
 const DEFAULT_FIELDS = [
@@ -51,7 +51,7 @@ const DEFAULT_FIELDS = [
   { id: "email", type: "email", label: "Email Address", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
   { id: "mobile", type: "tel", label: "Mobile Number", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
   { id: "gender", type: "radio", label: "Gender", required: true, options: ["Male", "Female"], helpText: "Auto-filled from user profile", isMandatory: true },
-  { id: "profileImage", type: "image", label: "Profile Photo", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true, imageUrl: "" },
+  { id: "profileImage", type: "image", label: "Profile Photo", required: false, options: [], helpText: "Auto-filled from user profile (optional)", isMandatory: false, imageUrl: "" },
 ];
 
 export default function EventForm({ event, organizers = [], userRole, userId, sports = [] }) {
