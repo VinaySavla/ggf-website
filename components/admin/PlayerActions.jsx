@@ -15,7 +15,11 @@ export default function PlayerActions({ player, usersWithoutPlayers = [], canDel
   const [isLinking, setIsLinking] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
 
-  const playerName = player.user?.name || player.name || player.playerId;
+  const playerName = player.user 
+    ? `${player.user.firstName} ${player.user.middleName} ${player.user.surname}`
+    : (player.firstName && player.middleName && player.surname)
+      ? `${player.firstName} ${player.middleName} ${player.surname}`
+      : player.playerId;
 
   const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete player "${playerName}"? This will also delete all their stats and tournament records.`)) {

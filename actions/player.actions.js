@@ -32,7 +32,7 @@ export async function getPlayers() {
       orderBy: { createdAt: "desc" },
       include: {
         user: {
-          select: { name: true, email: true, mobile: true },
+          select: { firstName: true, middleName: true, surname: true, email: true, mobile: true },
         },
         _count: {
           select: {
@@ -57,7 +57,7 @@ export async function createPlayer(data) {
       return { error: "Unauthorized" };
     }
 
-    const { name, email, mobile, bio, userId } = data;
+    const { firstName, middleName, surname, email, mobile, bio, userId } = data;
 
     // If linking to existing user, check if they already have a player profile
     if (userId) {
@@ -84,7 +84,9 @@ export async function createPlayer(data) {
     const player = await prisma.masterPlayer.create({
       data: {
         playerId,
-        name: name || null,
+        firstName: firstName || null,
+        middleName: middleName || null,
+        surname: surname || null,
         email: email || null,
         mobile: mobile || null,
         bio: bio || null,
@@ -108,12 +110,14 @@ export async function updatePlayer(id, data) {
       return { error: "Unauthorized" };
     }
 
-    const { name, email, mobile, bio } = data;
+    const { firstName, middleName, surname, email, mobile, bio } = data;
 
     const player = await prisma.masterPlayer.update({
       where: { id },
       data: {
-        name,
+        firstName,
+        middleName,
+        surname,
         email,
         mobile,
         bio,
@@ -228,11 +232,11 @@ export async function createPlayerWithAccount(data) {
       return { error: "Unauthorized" };
     }
 
-    const { name, email, mobile, password, photo, bio } = data;
+    const { firstName, middleName, surname, email, mobile, password, photo, bio } = data;
 
     // Validate required fields
-    if (!name || !email || !mobile || !password || !photo) {
-      return { error: "All fields are required (name, email, mobile, password, photo)" };
+    if (!firstName || !middleName || !surname || !email || !mobile || !password || !photo) {
+      return { error: "All fields are required (firstName, middleName, surname, email, mobile, password, photo)" };
     }
 
     // Check if email or mobile already exists
@@ -252,11 +256,16 @@ export async function createPlayerWithAccount(data) {
     // Generate Player ID
     const playerId = await generatePlayerId();
 
+    // Construct full name for welcome email
+    const fullName = `${firstName} ${middleName} ${surname}`;
+
     // Create user and player in transaction
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          name,
+          firstName,
+          middleName,
+          surname,
           email,
           mobile,
           password: hashedPassword,
@@ -276,7 +285,7 @@ export async function createPlayerWithAccount(data) {
     });
 
     // Send welcome email
-    sendWelcomeEmail(email, name, playerId).catch(err => {
+    sendWelcomeEmail(email, fullName, playerId).catch(err => {
       console.error('Failed to send welcome email:', err);
     });
 

@@ -14,7 +14,11 @@ export async function generateMetadata({ params }) {
   const player = await getPlayerBasic(id);
   if (!player) return { title: "User Not Found" };
   
-  const playerName = player.user?.name || player.name || "Unknown User";
+  const playerName = player.user 
+    ? `${player.user.firstName} ${player.user.middleName} ${player.user.surname}`
+    : (player.firstName && player.middleName && player.surname)
+      ? `${player.firstName} ${player.middleName} ${player.surname}`
+      : "Unknown User";
   return {
     title: `${playerName} - User Profile - GGF Admin`,
     description: `User profile for ${playerName}`,

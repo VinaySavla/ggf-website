@@ -11,7 +11,9 @@ export default function OrganizerForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    surname: "",
     email: "",
     mobile: "",
     password: "",
@@ -20,13 +22,22 @@ export default function OrganizerForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // For name fields, only allow single word (no spaces)
+    if (["firstName", "middleName", "surname"].includes(name)) {
+      if (value.includes(" ")) {
+        toast.error(`${name === "firstName" ? "First name" : name === "middleName" ? "Middle name" : "Surname"} should be a single word only`);
+        return;
+      }
+    }
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.firstName || !formData.middleName || !formData.surname || !formData.email || !formData.password) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -87,15 +98,45 @@ export default function OrganizerForm() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Full Name <span className="text-red-500">*</span>
+          First Name <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          name="name"
-          value={formData.name}
+          name="firstName"
+          value={formData.firstName}
           onChange={handleChange}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          placeholder="Enter full name"
+          placeholder="Enter first name (single word)"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Middle Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          name="middleName"
+          value={formData.middleName}
+          onChange={handleChange}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          placeholder="Enter middle name (single word)"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Surname <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          name="surname"
+          value={formData.surname}
+          onChange={handleChange}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          placeholder="Enter surname (single word)"
           required
         />
       </div>

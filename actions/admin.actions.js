@@ -17,7 +17,7 @@ export async function createUser(data) {
       return { error: "Unauthorized" };
     }
 
-    const { name, email, mobile, password, role = "USER" } = data;
+    const { firstName, middleName, surname, email, mobile, password, role = "USER" } = data;
 
     // Validate role
     const validRoles = ["USER", "ORGANIZER", "SUPER_ADMIN"];
@@ -44,7 +44,9 @@ export async function createUser(data) {
 
     await prisma.user.create({
       data: {
-        name,
+        firstName,
+        middleName,
+        surname,
         email,
         mobile: mobile || null,
         password: hashedPassword,

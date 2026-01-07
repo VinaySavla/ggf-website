@@ -17,7 +17,13 @@ export default function RosterManager({ team, availablePlayers, userRole }) {
   const [role, setRole] = useState("");
 
   const getPlayerName = (player) => {
-    return player.name || player.user?.name || player.playerId || "Unknown";
+    if (player.user) {
+      return `${player.user.firstName} ${player.user.middleName} ${player.user.surname}`;
+    }
+    if (player.firstName && player.middleName && player.surname) {
+      return `${player.firstName} ${player.middleName} ${player.surname}`;
+    }
+    return player.playerId || "Unknown";
   };
 
   const filteredPlayers = availablePlayers.filter((player) => {

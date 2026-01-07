@@ -15,7 +15,9 @@ export default function AddPlayerButton({ usersWithoutPlayers = [] }) {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState("new"); // "new", "account", or "link"
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    surname: "",
     email: "",
     mobile: "",
     bio: "",
@@ -24,17 +26,31 @@ export default function AddPlayerButton({ usersWithoutPlayers = [] }) {
     password: "",
   });
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // For name fields, only allow single word (no spaces)
+    if (["firstName", "middleName", "surname"].includes(name)) {
+      if (value.includes(" ")) {
+        toast.error(`${name === "firstName" ? "First name" : name === "middleName" ? "Middle name" : "Surname"} should be a single word only`);
+        return;
+      }
+    }
+    
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (mode === "new" && !formData.name.trim()) {
-      toast.error("Player name is required");
+    if (mode === "new" && (!formData.firstName.trim() || !formData.middleName.trim() || !formData.surname.trim())) {
+      toast.error("First name, middle name, and surname are required");
       return;
     }
     
     if (mode === "account") {
-      if (!formData.name.trim() || !formData.email.trim() || !formData.mobile.trim()) {
-        toast.error("Name, email and mobile are required for account creation");
+      if (!formData.firstName.trim() || !formData.middleName.trim() || !formData.surname.trim() || !formData.email.trim() || !formData.mobile.trim()) {
+        toast.error("First name, middle name, surname, email and mobile are required for account creation");
         return;
       }
       if (!formData.password || formData.password.length < 6) {
@@ -61,7 +77,9 @@ export default function AddPlayerButton({ usersWithoutPlayers = [] }) {
         result = await createPlayer({ userId: formData.userId });
       } else if (mode === "account") {
         result = await createPlayerWithAccount({
-          name: formData.name,
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          surname: formData.surname,
           email: formData.email,
           mobile: formData.mobile,
           password: formData.password,
@@ -70,7 +88,9 @@ export default function AddPlayerButton({ usersWithoutPlayers = [] }) {
         });
       } else {
         result = await createPlayer({
-          name: formData.name,
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          surname: formData.surname,
           email: formData.email || null,
           mobile: formData.mobile || null,
           bio: formData.bio || null,
@@ -82,7 +102,7 @@ export default function AddPlayerButton({ usersWithoutPlayers = [] }) {
       } else {
         toast.success(mode === "account" ? "Player account created successfully" : "Player created successfully");
         setIsOpen(false);
-        setFormData({ name: "", email: "", mobile: "", bio: "", userId: "", photo: "", password: "" });
+        setFormData({ firstName: "", middleName: "", surname: "", email: "", mobile: "", bio: "", userId: "", photo: "", password: "" });
         router.refresh();
       }
     } catch (error) {
@@ -280,14 +300,43 @@ export default function AddPlayerButton({ usersWithoutPlayers = [] }) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name <span className="text-red-500">*</span>
+                      First Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                      placeholder="Player's full name"
+                      placeholder="First name (single word)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Middle Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="middleName"
+                      value={formData.middleName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                      placeholder="Middle name (single word)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Surname <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="surname"
+                      value={formData.surname}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                      placeholder="Surname (single word)"
                     />
                   </div>
 
