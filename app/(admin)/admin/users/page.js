@@ -71,7 +71,7 @@ export default async function UsersPage() {
               <tbody className="divide-y divide-gray-200">
                 {organizers.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{`${user.firstName} ${user.middleName} ${user.surname}`}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{user.mobile || "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{user._count.createdEvents}</td>
@@ -105,7 +105,7 @@ export default async function UsersPage() {
             <tbody className="divide-y divide-gray-200">
               {admins.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{user.name}</td>
+                  <td className="px-6 py-4 font-medium text-gray-900">{`${user.firstName} ${user.middleName} ${user.surname}`}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{user.mobile || "-"}</td>
                 </tr>

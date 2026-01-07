@@ -14,9 +14,12 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    surname: "",
     email: "",
     mobile: "",
+    village: "",
     gender: "",
     password: "",
     confirmPassword: "",
@@ -75,6 +78,28 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate single word per name field
+    if (formData.firstName.trim().split(/\s+/).length > 1) {
+      toast.error("First name should be a single word only");
+      return;
+    }
+
+    if (formData.middleName.trim().split(/\s+/).length > 1) {
+      toast.error("Middle name should be a single word only");
+      return;
+    }
+
+    if (formData.surname.trim().split(/\s+/).length > 1) {
+      toast.error("Surname should be a single word only");
+      return;
+    }
+    
+    // Validate mobile number (10 digits only)
+    if (!/^\d{10}$/.test(formData.mobile)) {
+      toast.error("Mobile number must be exactly 10 digits");
+      return;
+    }
+    
     if (!formData.gender) {
       toast.error("Please select your gender");
       return;
@@ -94,9 +119,12 @@ export default function RegisterPage() {
 
     try {
       const result = await registerUser({
-        name: formData.name,
+        firstName: formData.firstName.trim(),
+        middleName: formData.middleName.trim(),
+        surname: formData.surname.trim(),
         email: formData.email,
         mobile: formData.mobile,
+        village: formData.village,
         gender: formData.gender,
         password: formData.password,
         photo: formData.photo,
@@ -190,18 +218,79 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name <span className="text-red-500">*</span>
+                First Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                value={formData.firstName}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Only allow single word (no spaces)
+                  if (!value.includes(' ')) {
+                    setFormData({ ...formData, firstName: value });
+                  }
+                }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                placeholder="Enter your full name"
+                placeholder="Enter your first name"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Middle Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.middleName}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Only allow single word (no spaces)
+                  if (!value.includes(' ')) {
+                    setFormData({ ...formData, middleName: value });
+                  }
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+                placeholder="Enter your middle name"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">                Village <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.village}
+                onChange={(e) =>
+                  setFormData({ ...formData, village: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+                placeholder="Enter your village name"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">                Surname <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.surname}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Only allow single word (no spaces)
+                  if (!value.includes(' ')) {
+                    setFormData({ ...formData, surname: value });
+                  }
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+                placeholder="Enter your surname"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             <div>
@@ -227,13 +316,19 @@ export default function RegisterPage() {
               <input
                 type="tel"
                 value={formData.mobile}
-                onChange={(e) =>
-                  setFormData({ ...formData, mobile: e.target.value })
-                }
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ''); // Only digits
+                  if (value.length <= 10) {
+                    setFormData({ ...formData, mobile: value });
+                  }
+                }}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
-                placeholder="Enter your mobile number"
+                placeholder="Enter your 10-digit mobile number"
+                maxLength={10}
+                pattern="\d{10}"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">Must be exactly 10 digits</p>
             </div>
 
             <div>

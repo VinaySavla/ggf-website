@@ -145,7 +145,7 @@ export default async function AdminDashboard() {
               >
                 <div>
                   <p className="font-medium text-gray-900">
-                    {reg.userData?.name || "Anonymous"}
+                    {reg.userData?.firstName} {reg.userData?.middleName} {reg.userData?.surname || "Anonymous"}
                   </p>
                   <p className="text-sm text-gray-500">{reg.event.title}</p>
                 </div>

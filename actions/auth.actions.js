@@ -25,7 +25,23 @@ async function generateMemberId() {
 
 export async function registerUser(data) {
   try {
-    const { name, email, mobile, password, photo, gender } = data;
+    const { firstName, middleName, surname, email, mobile, village, password, photo, gender } = data;
+
+    // Validate single word per field
+    if (firstName.trim().split(/\s+/).length > 1) {
+      return { error: "First name should be a single word only" };
+    }
+    if (middleName.trim().split(/\s+/).length > 1) {
+      return { error: "Middle name should be a single word only" };
+    }
+    if (surname.trim().split(/\s+/).length > 1) {
+      return { error: "Surname should be a single word only" };
+    }
+    
+    // Validate mobile number (10 digits)
+    if (!/^\d{10}$/.test(mobile)) {
+      return { error: "Mobile number must be exactly 10 digits" };
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
@@ -48,9 +64,12 @@ export async function registerUser(data) {
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          name,
+          firstName: firstName.trim(),
+          middleName: middleName.trim(),
+          surname: surname.trim(),
           email,
           mobile,
+          village,
           password: hashedPassword,
           photo,
           gender,
@@ -62,13 +81,19 @@ export async function registerUser(data) {
         data: {
           playerId: memberId,
           userId: user.id,
+          firstName: firstName.trim(),
+          middleName: middleName.trim(),
+          surname: surname.trim(),
           photo, // Also save to MasterPlayer for backwards compatibility
         },
       });
     });
 
+    // Construct full name for email
+    const fullName = `${firstName} ${middleName} ${surname}`;
+
     // Send welcome email (don't wait for it, don't fail registration if email fails)
-    sendWelcomeEmail(email, name, memberId).catch(err => {
+    sendWelcomeEmail(email, fullName, memberId).catch(err => {
       console.error('Failed to send welcome email:', err);
     });
 

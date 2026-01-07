@@ -53,9 +53,9 @@ export default function UserActions({ user, currentUserId }) {
       </button>
       <DeleteButton
         id={user.id}
-        name={user.name}
+        name={`${user.firstName} ${user.middleName} ${user.surname}`}
         deleteAction={deleteOrganizer}
-        confirmMessage={`Are you sure you want to delete organizer "${user.name}"? This action cannot be undone.`}
+        confirmMessage={`Are you sure you want to delete organizer "${user.firstName} ${user.middleName} ${user.surname}"? This action cannot be undone.`}
       />
     </div>
   );

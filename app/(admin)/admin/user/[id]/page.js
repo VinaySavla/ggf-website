@@ -27,7 +27,7 @@ async function getPlayerBasic(playerId) {
       where: { playerId },
       include: {
         user: {
-          select: { name: true },
+          select: { firstName: true, middleName: true, surname: true },
         },
       },
     });
@@ -44,7 +44,9 @@ async function getPlayerFull(playerId) {
         user: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            middleName: true,
+            surname: true,
             email: true,
             mobile: true,
             photo: true,
@@ -222,14 +224,14 @@ export default async function AdminPlayerProfilePage({ params }) {
               {(player.user?.photo || player.photo) ? (
                 <Image
                   src={player.user?.photo || player.photo}
-                  alt={player.user?.name || player.name || "Player"}
+                  alt={player.user?.firstName ? `${player.user.firstName} ${player.user.middleName} ${player.user.surname}` : player.firstName ? `${player.firstName} ${player.middleName} ${player.surname}` : "Player"}
                   width={128}
                   height={128}
                   className="rounded-full object-cover w-full h-full"
                 />
               ) : (
                 <span className="text-5xl font-bold text-primary">
-                  {(player.user?.name || player.name || "?")?.charAt(0).toUpperCase()}
+                  {(player.user?.firstName || player.firstName || "?")?.charAt(0).toUpperCase()}
                 </span>
               )}
               {/* Profile Image Editor - visible to admin or own profile */}
@@ -243,7 +245,7 @@ export default async function AdminPlayerProfilePage({ params }) {
               )}
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {player.user?.name || player.name || "Unknown Player"}
+              {player.user?.firstName ? `${player.user.firstName} ${player.user.middleName} ${player.user.surname}` : player.firstName ? `${player.firstName} ${player.middleName} ${player.surname}` : "Unknown Player"}
             </h2>
             <p className="text-primary font-mono text-sm mb-2">
               {player.playerId}

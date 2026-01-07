@@ -66,7 +66,6 @@ export default function AboutPage() {
             </div>
             <h3 className="font-semibold text-gray-900">Godhra Graduates Forum</h3>
           </div>
-          <div className="text-3xl text-gray-400">×</div>
           <div className="text-center">
             <div className="w-40 h-40 bg-white rounded-full shadow-lg flex items-center justify-center mx-auto mb-4">
               <Image

@@ -135,7 +135,7 @@ export default function PlayerActions({ player, usersWithoutPlayers = [], canDel
               <option value="">Select a user...</option>
               {usersWithoutPlayers.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.name} ({user.email})
+                  {`${user.firstName} ${user.middleName} ${user.surname}`} ({user.email})
                 </option>
               ))}
             </select>

@@ -19,7 +19,7 @@ async function getPlayers() {
     orderBy: { createdAt: "desc" },
     include: {
       user: {
-        select: { name: true, email: true, mobile: true },
+        select: { firstName: true, middleName: true, surname: true, email: true, mobile: true },
       },
       _count: {
         select: { 
@@ -70,11 +70,13 @@ async function getUsersWithoutPlayers() {
     },
     select: {
       id: true,
-      name: true,
+      firstName: true,
+      middleName: true,
+      surname: true,
       email: true,
       mobile: true,
     },
-    orderBy: { name: "asc" },
+    orderBy: { firstName: "asc" },
   });
 }
 
@@ -91,7 +93,15 @@ export default async function PlayersAdminPage() {
   ]);
 
   // Helper to get player display name
-  const getPlayerName = (player) => player.user?.name || player.name || "Unknown";
+  const getPlayerName = (player) => {
+    if (player.user?.firstName) {
+      return `${player.user.firstName} ${player.user.middleName} ${player.user.surname}`;
+    }
+    if (player.firstName) {
+      return `${player.firstName} ${player.middleName} ${player.surname}`;
+    }
+    return "Unknown";
+  };
   const getPlayerEmail = (player) => player.user?.email || player.email || "-";
   const getPlayerMobile = (player) => player.user?.mobile || player.mobile || "-";
 

@@ -32,7 +32,9 @@ export default function ProfilePage() {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    surname: "",
     email: "",
     mobile: "",
     bio: "",
@@ -73,7 +75,9 @@ export default function ProfilePage() {
       }
       
       setFormData({
-        name: result.user.name || "",
+        firstName: result.user.firstName || "",
+        middleName: result.user.middleName || "",
+        surname: result.user.surname || "",
         email: result.user.email || "",
         mobile: result.user.mobile || "",
         bio: result.user.userProfile?.bio || "",
@@ -154,11 +158,30 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate single word per name field
+    if (formData.firstName.trim().split(/\s+/).length > 1) {
+      toast.error("First name should be a single word only");
+      return;
+    }
+
+    if (formData.middleName.trim().split(/\s+/).length > 1) {
+      toast.error("Middle name should be a single word only");
+      return;
+    }
+
+    if (formData.surname.trim().split(/\s+/).length > 1) {
+      toast.error("Surname should be a single word only");
+      return;
+    }
+    
     setSaving(true);
 
     try {
       const result = await updateProfile({
-        name: formData.name,
+        firstName: formData.firstName.trim(),
+        middleName: formData.middleName.trim(),
+        surname: formData.surname.trim(),
         email: formData.email,
         mobile: formData.mobile,
         bio: formData.bio,
@@ -169,8 +192,14 @@ export default function ProfilePage() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        // Update the session with new name, gender, and village
-        await update({ name: formData.name, gender: formData.gender, village: formData.village });
+        // Update the session with new name fields, gender, and village
+        await update({ 
+          firstName: formData.firstName.trim(), 
+          middleName: formData.middleName.trim(), 
+          surname: formData.surname.trim(), 
+          gender: formData.gender, 
+          village: formData.village 
+        });
         toast.success("Profile updated successfully");
       }
     } catch (error) {
@@ -276,7 +305,7 @@ export default function ProfilePage() {
               </label>
             </div>
             
-            <h2 className="text-xl font-semibold text-gray-900">{formData.name}</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{`${formData.firstName} ${formData.middleName} ${formData.surname}`}</h2>
             <div className="flex items-center space-x-2 text-gray-600 mt-1">
               <Shield className="w-4 h-4" />
               <span className="text-sm capitalize">{session.user.role?.toLowerCase().replace('_', ' ')}</span>
@@ -293,16 +322,66 @@ export default function ProfilePage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <span className="flex items-center space-x-2">
                   <User className="w-4 h-4" />
-                  <span>Full Name</span>
+                  <span>First Name</span>
                 </span>
               </label>
               <input
                 type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.firstName}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value.includes(' ')) {
+                    setFormData({ ...formData, firstName: value });
+                  }
+                }}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
+              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <span className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>Middle Name</span>
+                </span>
+              </label>
+              <input
+                type="text"
+                value={formData.middleName}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value.includes(' ')) {
+                    setFormData({ ...formData, middleName: value });
+                  }
+                }}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <span className="flex items-center space-x-2">
+                  <User className="w-4 h-4" />
+                  <span>Surname</span>
+                </span>
+              </label>
+              <input
+                type="text"
+                value={formData.surname}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value.includes(' ')) {
+                    setFormData({ ...formData, surname: value });
+                  }
+                }}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             <div>

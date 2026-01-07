@@ -28,7 +28,7 @@ async function getTournamentData(tournamentId) {
         include: {
           player: {
             include: {
-              user: { select: { name: true } },
+              user: { select: { firstName: true, middleName: true, surname: true } },
             },
           },
           team: true,
@@ -38,7 +38,7 @@ async function getTournamentData(tournamentId) {
         include: {
           player: {
             include: {
-              user: { select: { name: true } },
+              user: { select: { firstName: true, middleName: true, surname: true } },
             },
           },
           sport: true,
@@ -62,7 +62,7 @@ async function getTournamentData(tournamentId) {
   const registeredPlayers = await prisma.masterPlayer.findMany({
     where: { userId: { in: userIds } },
     include: {
-      user: { select: { name: true } },
+      user: { select: { firstName: true, middleName: true, surname: true } },
     },
   });
 
@@ -94,7 +94,7 @@ export default async function TournamentStatsPage({ params }) {
   const rosterPlayers = tournament.rosters.map((r) => ({
     id: r.player.id,
     playerId: r.player.playerId,
-    name: r.player.user.name,
+    name: `${r.player.user.firstName} ${r.player.user.middleName} ${r.player.user.surname}`,
     team: r.team?.name,
     source: "roster",
   }));
@@ -102,7 +102,7 @@ export default async function TournamentStatsPage({ params }) {
   const regPlayers = registeredPlayers.map((p) => ({
     id: p.id,
     playerId: p.playerId,
-    name: p.user.name,
+    name: `${p.user.firstName} ${p.user.middleName} ${p.user.surname}`,
     team: null,
     source: "registration",
   }));

@@ -18,7 +18,7 @@ export default function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/events"
-                className="bg-accent hover:bg-accent-600 text-white px-8 py-3 rounded-full font-semibold text-center transition"
+                className="bg-primary hover:bg-primary-600 text-white px-8 py-3 rounded-full font-semibold text-center transition"
               >
                 View Events
               </Link>

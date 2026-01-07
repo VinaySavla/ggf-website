@@ -22,7 +22,13 @@ async function getEvents(userId, role) {
       _count: { select: { registrations: true } },
       tournament: {
         include: {
-          organizer: { select: { name: true } },
+          organizer: { 
+            select: { 
+              firstName: true,
+              middleName: true,
+              surname: true
+            } 
+          },
         },
       },
     },
@@ -72,7 +78,7 @@ export default async function EventsPage() {
                       <p className="font-medium text-gray-900">{event.title}</p>
                       {session.user.role === "SUPER_ADMIN" && event.tournament?.organizer && (
                         <p className="text-xs text-gray-500">
-                          By: {event.tournament.organizer.name}
+                          By: {`${event.tournament.organizer.firstName} ${event.tournament.organizer.middleName} ${event.tournament.organizer.surname}`}
                         </p>
                       )}
                     </div>
@@ -81,7 +87,7 @@ export default async function EventsPage() {
                     <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                       event.type === "Tournament"
                         ? "bg-primary-100 text-primary-700"
-                        : "bg-accent-100 text-accent-700"
+                        : "bg-primary-100 text-accent-700"
                     }`}>
                       {event.type}
                     </span>

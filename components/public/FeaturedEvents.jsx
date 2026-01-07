@@ -52,7 +52,7 @@ export default async function FeaturedEvents() {
                       ? 'bg-primary-100 text-primary-700' 
                       : event.type === 'Competition'
                       ? 'bg-blue-100 text-blue-700'
-                      : 'bg-accent-100 text-accent-700'
+                      : 'bg-primary-100 text-accent-700'
                   }`}>
                     {event.type}
                   </span>
@@ -86,7 +86,7 @@ export default async function FeaturedEvents() {
                   </Link>
                   <Link
                     href={`/events/${event.slug}`}
-                    className="flex-1 inline-flex items-center justify-center bg-accent text-white font-semibold text-sm rounded-lg px-4 py-2 hover:bg-accent-600 transition"
+                    className="flex-1 inline-flex items-center justify-center bg-primary text-white font-semibold text-sm rounded-lg px-4 py-2 hover:bg-primary-600 transition"
                   >
                     Register Now
                   </Link>

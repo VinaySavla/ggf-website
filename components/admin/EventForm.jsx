@@ -43,14 +43,10 @@ const FIELD_TYPES = [
 
 // Mandatory field IDs that cannot be deleted or have their type changed
 // These are auto-filled from user profile during registration
-const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "gender"];
+const MANDATORY_FIELD_IDS = ["firstName", "middleName", "surname", "email", "mobile", "gender"];
 
-// Initial default fields for new events
+// Initial default fields for new events (optional fields only - mandatory fields are always included automatically)
 const DEFAULT_FIELDS = [
-  { id: "name", type: "text", label: "Full Name", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
-  { id: "email", type: "email", label: "Email Address", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
-  { id: "mobile", type: "tel", label: "Mobile Number", required: true, options: [], helpText: "Auto-filled from user profile", isMandatory: true },
-  { id: "gender", type: "radio", label: "Gender", required: true, options: ["Male", "Female"], helpText: "Auto-filled from user profile", isMandatory: true },
   { id: "profileImage", type: "image", label: "Profile Photo", required: false, options: [], helpText: "Auto-filled from user profile (optional)", isMandatory: false, imageUrl: "" },
 ];
 
@@ -90,11 +86,13 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
     maxFemaleRegistrations: event?.maxFemaleRegistrations || "",
   });
   
-  const [formSchema, setFormSchema] = useState(
-    event?.formSchema && Array.isArray(event.formSchema) 
-      ? event.formSchema 
-      : DEFAULT_FIELDS
-  );
+  const [formSchema, setFormSchema] = useState(() => {
+    // Filter out mandatory fields from existing event schemas (they're included automatically now)
+    const existingSchema = event?.formSchema && Array.isArray(event.formSchema) 
+      ? event.formSchema.filter(field => !MANDATORY_FIELD_IDS.includes(field.id))
+      : DEFAULT_FIELDS;
+    return existingSchema;
+  });
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -296,9 +294,12 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
     setIsLoading(true);
 
     try {
+      // Filter out mandatory fields from formSchema - they are always included automatically
+      const cleanedFormSchema = formSchema.filter(field => !MANDATORY_FIELD_IDS.includes(field.id));
+      
       const payload = {
         ...formData,
-        formSchema,
+        formSchema: cleanedFormSchema,
         eventDate: formData.eventDate ? new Date(formData.eventDate) : null,
         registrationStartDate: formData.registrationStartDate ? new Date(formData.registrationStartDate) : null,
         registrationEndDate: formData.registrationEndDate ? new Date(formData.registrationEndDate) : null,
@@ -704,7 +705,7 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
 
       {/* Payment Settings Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-accent px-6 py-4">
+        <div className="bg-primary px-6 py-4">
           <h3 className="text-lg font-semibold text-white">Payment Settings</h3>
         </div>
         
@@ -782,6 +783,23 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
         </div>
         
         <div className="p-6">
+          {/* Mandatory Fields Information */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm font-semibold text-blue-900 mb-2">ℹ️ Mandatory Fields (Auto-included)</p>
+            <p className="text-sm text-blue-700">
+              The following fields are automatically included in all event registrations and cannot be edited or removed:
+            </p>
+            <ul className="mt-2 text-sm text-blue-700 list-disc list-inside space-y-1">
+              <li><strong>First Name, Middle Name, Surname</strong> - Auto-filled from user profile (read-only)</li>
+              <li><strong>Email Address</strong> - Auto-filled from user profile (read-only)</li>
+              <li><strong>Mobile Number</strong> - Auto-filled from user profile (read-only)</li>
+              <li><strong>Gender</strong> - Auto-filled from user profile (read-only)</li>
+            </ul>
+            <p className="text-sm text-blue-600 mt-2">
+              These fields are displayed at the top of the registration form and are always non-editable for users.
+            </p>
+          </div>
+
           {/* Add Field Toolbar */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-700 mb-3">Add Question Type:</p>
@@ -802,7 +820,13 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
 
           {/* Form Fields */}
           <div className="space-y-4">
-            {formSchema.map((field, index) => {
+            {formSchema.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">No additional fields added yet.</p>
+                <p className="text-xs mt-1">Click on a question type above to add custom fields to your registration form.</p>
+              </div>
+            ) : (
+              formSchema.map((field, index) => {
               const isMandatoryField = MANDATORY_FIELD_IDS.includes(field.id);
               return (
               <div
@@ -1126,7 +1150,8 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                 )}
               </div>
             );
-            })}
+            })
+            )}
           </div>
 
           {/* Quick add button */}

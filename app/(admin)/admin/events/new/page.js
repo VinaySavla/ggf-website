@@ -12,7 +12,7 @@ export const metadata = {
 async function getOrganizers() {
   return prisma.user.findMany({
     where: { role: "ORGANIZER" },
-    select: { id: true, name: true, email: true },
+    select: { id: true, firstName: true, middleName: true, surname: true, email: true },
   });
 }
 

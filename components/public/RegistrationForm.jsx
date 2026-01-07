@@ -10,7 +10,7 @@ import Image from "next/image";
 import { submitRegistration } from "@/actions/event.actions";
 
 // Mandatory field IDs that are auto-filled from user profile
-const MANDATORY_FIELD_IDS = ["name", "email", "mobile", "gender"];
+const MANDATORY_FIELD_IDS = ["firstName", "middleName", "surname", "email", "mobile", "gender"];
 
 export default function RegistrationForm({ event }) {
   const router = useRouter();
@@ -37,7 +37,9 @@ export default function RegistrationForm({ event }) {
     if (session?.user) {
       setFormData((prev) => ({
         ...prev,
-        name: session.user.name || "",
+        firstName: session.user.firstName || "",
+        middleName: session.user.middleName || "",
+        surname: session.user.surname || "",
         email: session.user.email || "",
         mobile: session.user.mobile || "",
         profileImage: session.user.photo || "",
@@ -51,6 +53,16 @@ export default function RegistrationForm({ event }) {
     if (MANDATORY_FIELD_IDS.includes(fieldId)) {
       return;
     }
+    
+    // For name fields that might be in dynamic forms, validate single word
+    if (['firstName', 'middleName', 'surname'].includes(fieldId)) {
+      // Only allow single word (no spaces)
+      if (value.includes(' ')) {
+        toast.error(`${fieldId === 'firstName' ? 'First name' : fieldId === 'middleName' ? 'Middle name' : 'Surname'} should be a single word only`);
+        return;
+      }
+    }
+    
     setFormData((prev) => ({ ...prev, [fieldId]: value }));
   };
 
@@ -188,7 +200,9 @@ export default function RegistrationForm({ event }) {
     // Ensure mandatory fields are filled from session
     const finalFormData = {
       ...formData,
-      name: session.user.name,
+      firstName: session.user.firstName,
+      middleName: session.user.middleName,
+      surname: session.user.surname,
       email: session.user.email,
       mobile: session.user.mobile || formData.mobile,
       gender: session.user.gender,
@@ -484,6 +498,87 @@ export default function RegistrationForm({ event }) {
         <p className="text-blue-600 mt-1">Name, Email, Phone, and Gender are pre-filled from your account and cannot be edited here.</p>
       </div>
 
+      {/* Mandatory Name Fields - Always displayed first, read-only, auto-filled from profile */}
+      {session?.user && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              First Name <span className="text-red-500">*</span>
+              <span className="text-xs text-gray-500 ml-2">(from your profile)</span>
+            </label>
+            <input
+              type="text"
+              value={session.user.firstName || ""}
+              disabled
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Middle Name <span className="text-red-500">*</span>
+              <span className="text-xs text-gray-500 ml-2">(from your profile)</span>
+            </label>
+            <input
+              type="text"
+              value={session.user.middleName || ""}
+              disabled
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Surname <span className="text-red-500">*</span>
+              <span className="text-xs text-gray-500 ml-2">(from your profile)</span>
+            </label>
+            <input
+              type="text"
+              value={session.user.surname || ""}
+              disabled
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+            />
+          </div>
+        </>
+      )}
+
+      {/* Email Field - Mandatory, read-only */}
+      {session?.user && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Email Address <span className="text-red-500">*</span>
+            <span className="text-xs text-gray-500 ml-2">(from your profile)</span>
+          </label>
+          <input
+            type="email"
+            value={session.user.email || ""}
+            disabled
+            readOnly
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+          />
+        </div>
+      )}
+
+      {/* Mobile Field - Mandatory, read-only */}
+      {session?.user && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Mobile Number <span className="text-red-500">*</span>
+            <span className="text-xs text-gray-500 ml-2">(from your profile)</span>
+          </label>
+          <input
+            type="tel"
+            value={session.user.mobile || ""}
+            disabled
+            readOnly
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+          />
+        </div>
+      )}
+
       {/* Gender Display - Mandatory field from profile */}
       {session?.user && (
         <div>
@@ -496,6 +591,7 @@ export default function RegistrationForm({ event }) {
               type="text"
               value={session.user.gender}
               disabled
+              readOnly
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
             />
           ) : (
@@ -512,7 +608,8 @@ export default function RegistrationForm({ event }) {
         </div>
       )}
       
-      {formSchema.map((field) => {
+      {/* Filter out mandatory fields from formSchema and render remaining fields */}
+      {formSchema.filter(field => !MANDATORY_FIELD_IDS.includes(field.id)).map((field) => {
         const isMandatoryField = MANDATORY_FIELD_IDS.includes(field.id);
         const isDisplayField = ["note", "image"].includes(field.type);
         

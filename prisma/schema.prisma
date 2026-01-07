@@ -9,11 +9,13 @@ generator client {
 
 // 1. AUTH & USERS
 model User {
-  id        String    @id @default(cuid())
-  name      String?
-  email     String?   @unique
-  mobile    String?   @unique
-  password  String    // Hashed
+  id         String    @id @default(cuid())
+  firstName  String
+  middleName String
+  surname    String
+  email      String?   @unique
+  mobile     String?   @unique
+  password   String    // Hashed
   photo     String?    // Profile picture URL
   gender    String?   // "Male", "Female", "Other"
   village   String?   // User's village name
@@ -50,9 +52,11 @@ model MasterPlayer {
   userId    String?   @unique
   
   // Player details (used when no user account linked)
-  name      String?
-  email     String?
-  mobile    String?
+  firstName  String?
+  middleName String?
+  surname    String?
+  email      String?
+  mobile     String?
   
   photo     String?
   bio       String?

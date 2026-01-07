@@ -16,7 +16,9 @@ export async function getProfile() {
       where: { id: session.user.id },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        middleName: true,
+        surname: true,
         email: true,
         mobile: true,
         photo: true,
@@ -52,7 +54,18 @@ export async function updateProfile(data) {
       return { error: "Not authenticated" };
     }
 
-    const { name, email, mobile, bio, gender, village } = data;
+    const { firstName, middleName, surname, email, mobile, bio, gender, village } = data;
+    
+    // Validate single word per name field
+    if (firstName && firstName.trim().split(/\s+/).length > 1) {
+      return { error: "First name should be a single word only" };
+    }
+    if (middleName && middleName.trim().split(/\s+/).length > 1) {
+      return { error: "Middle name should be a single word only" };
+    }
+    if (surname && surname.trim().split(/\s+/).length > 1) {
+      return { error: "Surname should be a single word only" };
+    }
 
     // Check if email/mobile already used by another user
     const existingUser = await prisma.user.findFirst({
@@ -79,7 +92,9 @@ export async function updateProfile(data) {
       await tx.user.update({
         where: { id: session.user.id },
         data: {
-          name,
+          firstName: firstName?.trim(),
+          middleName: middleName?.trim(),
+          surname: surname?.trim(),
           email,
           mobile,
           gender,
@@ -87,13 +102,16 @@ export async function updateProfile(data) {
         },
       });
 
-      // Update player profile bio if exists
-      if (bio !== undefined) {
-        await tx.masterPlayer.updateMany({
-          where: { userId: session.user.id },
-          data: { bio },
-        });
-      }
+      // Update player profile with name and bio if exists
+      await tx.masterPlayer.updateMany({
+        where: { userId: session.user.id },
+        data: { 
+          firstName: firstName?.trim(),
+          middleName: middleName?.trim(),
+          surname: surname?.trim(),
+          ...(bio !== undefined && { bio })
+        },
+      });
     });
 
     revalidatePath("/profile");

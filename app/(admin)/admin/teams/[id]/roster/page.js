@@ -68,10 +68,10 @@ async function getAvailablePlayers(tournamentId) {
     where: whereClause,
     include: {
       user: {
-        select: { name: true, email: true },
+        select: { firstName: true, middleName: true, surname: true, email: true },
       },
     },
-    orderBy: { name: "asc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 

@@ -111,11 +111,11 @@ export default async function RegistrationsPage({ searchParams }) {
                             href={`/admin/user/${reg.playerId}`}
                             className="font-medium text-primary hover:underline"
                           >
-                            {reg.userData?.name || "N/A"}
+                            {reg.userData?.firstName} {reg.userData?.middleName} {reg.userData?.surname || "N/A"}
                           </Link>
                         ) : (
                           <p className="font-medium text-gray-900">
-                            {reg.userData?.name || "N/A"}
+                            {reg.userData?.firstName} {reg.userData?.middleName} {reg.userData?.surname || "N/A"}
                           </p>
                         )}
                         <p className="text-sm text-gray-500">

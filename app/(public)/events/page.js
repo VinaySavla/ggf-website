@@ -98,7 +98,7 @@ function EventCard({ event, isPast = false }) {
                 ? 'bg-primary-100 text-primary-700'
                 : event.type === 'Competition'
                 ? 'bg-blue-100 text-blue-700'
-                : 'bg-accent-100 text-accent-700'
+                : 'bg-primary-100 text-accent-700'
             }`}
           >
             {event.type}

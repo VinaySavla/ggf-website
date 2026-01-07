@@ -225,7 +225,7 @@ export async function getAllPlayers() {
     const players = await prisma.masterPlayer.findMany({
       include: {
         user: {
-          select: { name: true },
+          select: { firstName: true, middleName: true, surname: true },
         },
       },
       orderBy: {
@@ -237,7 +237,7 @@ export async function getAllPlayers() {
       players: players.map((p) => ({
         id: p.id,
         playerId: p.playerId,
-        name: p.user?.name || p.name || "Unknown",
+        name: p.user ? `${p.user.firstName} ${p.user.middleName} ${p.user.surname}` : p.firstName ? `${p.firstName} ${p.middleName} ${p.surname}` : "Unknown",
         team: null,
       })),
     };
@@ -259,7 +259,7 @@ export async function getGeneralStats() {
         player: {
           include: {
             user: {
-              select: { name: true },
+              select: { firstName: true, middleName: true, surname: true },
             },
           },
         },
@@ -287,7 +287,7 @@ export async function getTournamentPlayers(tournamentId) {
             player: {
               include: {
                 user: {
-                  select: { name: true },
+                  select: { firstName: true, middleName: true, surname: true },
                 },
               },
             },
@@ -305,7 +305,7 @@ export async function getTournamentPlayers(tournamentId) {
     const rosterPlayers = tournament.rosters.map((r) => ({
       id: r.player.id,
       playerId: r.player.playerId,
-      name: r.player.user?.name || r.player.name || "Unknown",
+      name: r.player.user ? `${r.player.user.firstName} ${r.player.user.middleName} ${r.player.user.surname}` : r.player.firstName ? `${r.player.firstName} ${r.player.middleName} ${r.player.surname}` : "Unknown",
       team: r.team?.name,
     }));
 
@@ -329,7 +329,7 @@ export async function getTournamentPlayers(tournamentId) {
       },
       include: {
         user: {
-          select: { name: true },
+          select: { firstName: true, middleName: true, surname: true },
         },
       },
     });
@@ -337,7 +337,7 @@ export async function getTournamentPlayers(tournamentId) {
     const regPlayers = registeredPlayers.map((p) => ({
       id: p.id,
       playerId: p.playerId,
-      name: p.user?.name || p.name || "Unknown",
+      name: p.user ? `${p.user.firstName} ${p.user.middleName} ${p.user.surname}` : p.firstName ? `${p.firstName} ${p.middleName} ${p.surname}` : "Unknown",
       team: null,
     }));
 

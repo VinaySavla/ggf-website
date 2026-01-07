@@ -265,12 +265,15 @@ export async function submitRegistration(data) {
     // Get full user data including mobile and gender
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, name: true, email: true, mobile: true, gender: true },
+      select: { id: true, firstName: true, middleName: true, surname: true, email: true, mobile: true, gender: true },
     });
 
     if (!user) {
       return { error: "User not found" };
     }
+
+    // Construct full name
+    const fullName = `${user.firstName} ${user.middleName} ${user.surname}`;
 
     // Get gender from user profile
     const userGender = user.gender;
@@ -334,7 +337,9 @@ export async function submitRegistration(data) {
         userData: {
           ...userData,
           userId: user.id,
-          name: user.name,
+          firstName: user.firstName,
+          middleName: user.middleName,
+          surname: user.surname,
           email: user.email,
           mobile: user.mobile || userData.mobile,
           gender: userGender,
@@ -351,7 +356,7 @@ export async function submitRegistration(data) {
     // Send confirmation email (don't wait, don't fail registration if email fails)
     sendEventRegistrationEmail(
       user.email,
-      user.name,
+      fullName,
       event.title,
       userProfile?.playerId || 'N/A',
       event.isPaid
