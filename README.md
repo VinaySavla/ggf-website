@@ -169,7 +169,7 @@ ggf-website/
 
 ### User & Authentication
 - **User**: id, name, email, password, role (USER/ORGANIZER/SUPER_ADMIN), mobile, village, gender
-- **MasterPlayer**: User profile with playerId (GGF-GSC-YYMM-XXX format), bio, photo, stats
+- **MasterPlayer**: User profile with playerId (YYYYMMDDhhmm0001 format), bio, photo, stats
 
 ### Events & Registrations
 - **Event**: title, slug, description, type (General/Tournament), formSchema, registration settings

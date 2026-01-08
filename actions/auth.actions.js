@@ -8,19 +8,22 @@ import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/mail";
 // Generate unique Member ID
 async function generateMemberId() {
   const now = new Date();
-  const year = now.getFullYear().toString().slice(-2);
+  const year = now.getFullYear().toString();
   const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const yearMonth = `${year}-${month}`;
+  const day = now.getDate().toString().padStart(2, "0");
+  const hour = now.getHours().toString().padStart(2, "0");
+  const minute = now.getMinutes().toString().padStart(2, "0");
+  const timeKey = `${year}${month}${day}${hour}${minute}`;
 
   // Atomically get and increment the sequence
   const sequence = await prisma.playerIdSequence.upsert({
-    where: { yearMonth },
+    where: { yearMonth: timeKey },
     update: { lastIndex: { increment: 1 } },
-    create: { yearMonth, lastIndex: 1 },
+    create: { yearMonth: timeKey, lastIndex: 1 },
   });
 
-  const index = sequence.lastIndex.toString().padStart(5, "0");
-  return `GGF-GSC-${yearMonth}-${index}`;
+  const index = sequence.lastIndex.toString().padStart(4, "0");
+  return `${timeKey}${index}`;
 }
 
 export async function registerUser(data) {

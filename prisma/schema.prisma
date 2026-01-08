@@ -45,7 +45,7 @@ model PasswordResetToken {
 // 2. MASTER PLAYER & STATS
 model MasterPlayer {
   id        String    @id @default(cuid())
-  playerId  String    @unique // The "GGF-GSC-..." ID
+  playerId  String    @unique // The "YYYYMMDDhhmm0001" ID format
   
   // User link is optional - players can exist without a user account
   user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
