@@ -70,7 +70,7 @@ model MasterPlayer {
 }
 
 model PlayerIdSequence {
-  yearMonth   String  @id @unique // "YY-MM", e.g., "25-11"
+  yearMonth   String  @id @unique // "YYYYMMDDhhmm", e.g., "202601081430"
   lastIndex   Int
 
   @@map("player_id_sequences")
