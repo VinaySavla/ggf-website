@@ -178,7 +178,9 @@ export default async function RegistrationsPage({ searchParams }) {
                       isPaid={reg.event.isPaid}
                       userRole={session.user.role}
                       playerId={reg.playerId}
-                      playerName={reg.userData?.name}
+                      playerName={reg.userData?.firstName && reg.userData?.middleName && reg.userData?.surname 
+                        ? `${reg.userData.firstName} ${reg.userData.middleName} ${reg.userData.surname}`
+                        : null}
                       userData={reg.userData}
                       formSchema={reg.event.formSchema}
                     />

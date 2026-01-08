@@ -73,7 +73,9 @@ export async function getOrganizers() {
       where: { role: "ORGANIZER" },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        middleName: true,
+        surname: true,
         email: true,
         mobile: true,
         createdAt: true,

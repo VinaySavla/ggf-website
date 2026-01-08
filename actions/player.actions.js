@@ -182,11 +182,13 @@ export async function getUsersWithoutPlayers() {
       },
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        middleName: true,
+        surname: true,
         email: true,
         mobile: true,
       },
-      orderBy: { name: "asc" },
+      orderBy: { firstName: "asc" },
     });
     return { users };
   } catch (error) {
