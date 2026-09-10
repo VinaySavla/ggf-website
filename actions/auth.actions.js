@@ -3,7 +3,9 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
-import { sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/mail";
+import { sendLoginCodeEmail, sendPasswordResetEmail, sendWelcomeEmail } from "@/lib/mail";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { authSecret } from "@/lib/secrets";
 
 // Generate unique Member ID
 async function generateMemberId() {
@@ -28,28 +30,27 @@ async function generateMemberId() {
 
 export async function registerUser(data) {
   try {
+    const normalizedEmail = String(data.email || "").trim().toLowerCase();
+    const normalizedMobile = String(data.mobile || "").trim();
+    await checkRateLimit("registration", normalizedEmail || normalizedMobile, 4, 60 * 60 * 1000);
     const { firstName, middleName, surname, email, mobile, village, password, photo, gender } = data;
 
-    // Validate single word per field
-    if (firstName.trim().split(/\s+/).length > 1) {
-      return { error: "First name should be a single word only" };
-    }
-    if (middleName.trim().split(/\s+/).length > 1) {
-      return { error: "Middle name should be a single word only" };
-    }
-    if (surname.trim().split(/\s+/).length > 1) {
-      return { error: "Surname should be a single word only" };
+    if (![firstName, middleName, surname, email, mobile, village, password, photo, gender].every(value => String(value || "").trim())) {
+      return { error: "All registration fields, including profile photo, are required" };
     }
     
     // Validate mobile number (10 digits)
-    if (!/^\d{10}$/.test(mobile)) {
+    if (!/^\d{10}$/.test(normalizedMobile)) {
       return { error: "Mobile number must be exactly 10 digits" };
+    }
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      return { error: "Password must be at least 8 characters and include a letter and number" };
     }
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email }, { mobile }],
+        OR: [{ email: { equals: normalizedEmail, mode: "insensitive" } }, { mobile: normalizedMobile }],
       },
     });
 
@@ -70,8 +71,8 @@ export async function registerUser(data) {
           firstName: firstName.trim(),
           middleName: middleName.trim(),
           surname: surname.trim(),
-          email,
-          mobile,
+          email: normalizedEmail,
+          mobile: normalizedMobile,
           village,
           password: hashedPassword,
           photo,
@@ -96,7 +97,7 @@ export async function registerUser(data) {
     const fullName = `${firstName} ${middleName} ${surname}`;
 
     // Send welcome email (don't wait for it, don't fail registration if email fails)
-    sendWelcomeEmail(email, fullName, memberId).catch(err => {
+    sendWelcomeEmail(normalizedEmail, fullName, memberId).catch(err => {
       console.error('Failed to send welcome email:', err);
     });
 
@@ -109,9 +110,9 @@ export async function registerUser(data) {
 
 export async function sendPasswordResetLink(email) {
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    await checkRateLimit("password-reset", normalizedEmail, 4, 60 * 60 * 1000);
+    const user = await prisma.user.findFirst({ where: { email: { equals: normalizedEmail, mode: "insensitive" } } });
 
     if (!user) {
       // Don't reveal if email exists
@@ -125,18 +126,20 @@ export async function sendPasswordResetLink(email) {
 
     // Generate new token
     const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await prisma.passwordResetToken.create({
       data: {
-        token,
+        token: tokenHash,
         expires,
         userId: user.id,
       },
     });
 
     // Send email
-    await sendPasswordResetEmail(email, token);
+    const mailResult = await sendPasswordResetEmail(normalizedEmail, token);
+    if (!mailResult.success) return { error: "Email service is temporarily unavailable. Please try again later." };
 
     return { success: true };
   } catch (error) {
@@ -145,10 +148,38 @@ export async function sendPasswordResetLink(email) {
   }
 }
 
+export async function requestLoginCode(identifier) {
+  try {
+    const raw = String(identifier || "").trim();
+    const normalized = raw.includes("@") ? raw.toLowerCase() : raw;
+    if (!normalized) return { error: "Enter your email, mobile or member ID" };
+    await checkRateLimit("login-code-request", normalized, 4, 15 * 60 * 1000);
+    let user = await prisma.user.findFirst({ where: { OR: [{ email: { equals: normalized, mode: "insensitive" } }, { mobile: normalized }] } });
+    if (!user) {
+      const profile = await prisma.masterPlayer.findUnique({ where: { playerId: normalized }, include: { user: true } });
+      user = profile?.user || null;
+    }
+    if (!user?.email || !user.isActive) return { success: true };
+    const code = crypto.randomInt(100000, 1000000).toString();
+    const codeHash = crypto.createHmac("sha256", authSecret()).update(code).digest("hex");
+    await prisma.$transaction([
+      prisma.loginCode.deleteMany({ where: { userId: user.id } }),
+      prisma.loginCode.create({ data: { userId: user.id, codeHash, expiresAt: new Date(Date.now() + 10 * 60 * 1000) } }),
+    ]);
+    const result = await sendLoginCodeEmail(user.email, user.firstName, code);
+    if (!result.success) return { error: "Email service is temporarily unavailable" };
+    return { success: true };
+  } catch (error) {
+    console.error("Login code error:", error);
+    return { error: "Unable to send a sign-in code. Please try again." };
+  }
+}
+
 export async function verifyResetToken(token) {
   try {
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
+      where: { token: tokenHash },
     });
 
     if (!resetToken) {
@@ -172,8 +203,10 @@ export async function verifyResetToken(token) {
 
 export async function resetPassword(token, newPassword) {
   try {
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) return { error: "Password must be at least 8 characters and include a letter and number" };
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
+      where: { token: tokenHash },
       include: { user: true },
     });
 

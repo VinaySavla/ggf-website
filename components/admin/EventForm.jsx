@@ -74,8 +74,13 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
     village: event?.village || "",
     isPaid: event?.isPaid || false,
     upiQrImage: event?.upiQrImage || "",
+    paymentAmount: event?.paymentAmount || "",
+    upiId: event?.upiId || "",
+    paymentInstructions: event?.paymentInstructions || "",
+    paymentReviewHours: event?.paymentReviewHours || 48,
+    refundPolicy: event?.refundPolicy || "",
     isActive: event?.isActive ?? true,
-    organizerId: event?.tournament?.organizerId || "",
+    organizerId: event?.organizerId || event?.tournament?.organizerId || "",
     // Registration window
     registrationStartDate: event?.registrationStartDate ? new Date(event.registrationStartDate).toISOString().slice(0, 16) : "",
     registrationEndDate: event?.registrationEndDate ? new Date(event.registrationEndDate).toISOString().slice(0, 16) : "",
@@ -84,6 +89,7 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
     maxTotalRegistrations: event?.maxTotalRegistrations || "",
     maxMaleRegistrations: event?.maxMaleRegistrations || "",
     maxFemaleRegistrations: event?.maxFemaleRegistrations || "",
+    maxOtherRegistrations: event?.maxOtherRegistrations || "",
   });
   
   const [formSchema, setFormSchema] = useState(() => {
@@ -306,6 +312,7 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
         maxTotalRegistrations: formData.maxTotalRegistrations ? parseInt(formData.maxTotalRegistrations) : null,
         maxMaleRegistrations: formData.maxMaleRegistrations ? parseInt(formData.maxMaleRegistrations) : null,
         maxFemaleRegistrations: formData.maxFemaleRegistrations ? parseInt(formData.maxFemaleRegistrations) : null,
+        maxOtherRegistrations: formData.maxOtherRegistrations ? parseInt(formData.maxOtherRegistrations) : null,
         tournamentType: formData.type === "Tournament" ? formData.tournamentType : null,
         sportIds: selectedSports,
       };
@@ -502,13 +509,15 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
               <label className="block text-sm font-medium text-gray-700">
                 Associated Sports <span className="text-gray-400">(Optional)</span>
               </label>
-              <button
-                type="button"
-                onClick={() => setShowNewSportModal(true)}
-                className="text-xs text-primary hover:text-primary/80 font-medium"
-              >
-                + Add New Sport
-              </button>
+              {userRole === "SUPER_ADMIN" && (
+                <button
+                  type="button"
+                  onClick={() => setShowNewSportModal(true)}
+                  className="text-xs text-primary hover:text-primary/80 font-medium"
+                >
+                  + Add New Sport
+                </button>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200 min-h-[60px]">
               {availableSports.length === 0 ? (
@@ -644,7 +653,7 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                     onChange={handleChange}
                     className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
                   />
-                  <span className="ml-2 text-sm text-gray-700">Separate (Male & Female limits)</span>
+                  <span className="ml-2 text-sm text-gray-700">Separate (Male, female and other limits)</span>
                 </label>
               </div>
             </div>
@@ -665,7 +674,7 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                 />
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-2">
                     Maximum Male Registrations
@@ -693,6 +702,10 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     placeholder="Leave empty for unlimited"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-2">Maximum Other Registrations</label>
+                  <input type="number" name="maxOtherRegistrations" value={formData.maxOtherRegistrations} onChange={handleChange} min="0" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none" placeholder="Leave empty for unlimited" />
                 </div>
               </div>
             )}
@@ -725,7 +738,15 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
           </div>
 
           {formData.isPaid && (
-            <div>
+            <div className="space-y-5">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div><label className="block text-sm font-medium mb-2">Amount (₹)</label><input name="paymentAmount" type="number" min="1" required value={formData.paymentAmount} onChange={handleChange} className="w-full border rounded-lg px-4 py-3"/></div>
+                <div><label className="block text-sm font-medium mb-2">UPI ID</label><input name="upiId" value={formData.upiId} onChange={handleChange} placeholder="name@bank" className="w-full border rounded-lg px-4 py-3"/></div>
+                <div><label className="block text-sm font-medium mb-2">Review time (hours)</label><input name="paymentReviewHours" type="number" min="1" value={formData.paymentReviewHours} onChange={handleChange} className="w-full border rounded-lg px-4 py-3"/></div>
+              </div>
+              <div><label className="block text-sm font-medium mb-2">Payment instructions</label><textarea name="paymentInstructions" value={formData.paymentInstructions} onChange={handleChange} rows={3} className="w-full border rounded-lg px-4 py-3"/></div>
+              <div><label className="block text-sm font-medium mb-2">Refund policy</label><textarea name="refundPolicy" value={formData.refundPolicy} onChange={handleChange} rows={3} className="w-full border rounded-lg px-4 py-3"/></div>
+              <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 UPI QR Code Image
               </label>
@@ -768,6 +789,7 @@ export default function EventForm({ event, organizers = [], userRole, userId, sp
                   </div>
                 )}
               </div>
+            </div>
             </div>
           )}
         </div>

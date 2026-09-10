@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { getSports } from "@/actions/stats.actions";
 import SportsManager from "@/components/admin/SportsManager";
+import StatDefinitions from "@/components/admin/StatDefinitions";
+import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +19,7 @@ export default async function SportsPage() {
   }
 
   const { sports, error } = await getSports();
+  const sportsWithDefinitions = await prisma.sport.findMany({ include: { statDefinitions: { orderBy: { sortOrder: "asc" } } }, orderBy: { name: "asc" } });
 
   return (
     <div>
@@ -26,6 +29,7 @@ export default async function SportsPage() {
       </div>
 
       <SportsManager initialSports={sports || []} />
+      <StatDefinitions sports={sportsWithDefinitions} />
     </div>
   );
 }

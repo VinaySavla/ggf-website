@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Users, Trophy, UserPlus } from "lucide-react";
 import RosterManager from "@/components/admin/RosterManager";
 
@@ -109,7 +110,7 @@ export default async function TeamRosterPage({ params }) {
                 className="w-12 h-12 rounded-lg flex items-center justify-center bg-primary"
               >
                 {team.logo ? (
-                  <img src={team.logo} alt={team.name} className="w-8 h-8 object-contain" />
+                  <Image src={team.logo} alt={team.name} width={32} height={32} className="w-8 h-8 object-contain" />
                 ) : (
                   <Trophy className="w-6 h-6 text-white" />
                 )}

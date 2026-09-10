@@ -1,73 +1,71 @@
-import { NextResponse } from 'next/server'
-import { readFile, stat } from 'fs/promises'
-import path from 'path'
+import { readFile, stat } from "fs/promises";
+import path from "path";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { resolveStoragePath, UPLOAD_FOLDERS } from "@/lib/upload-policy";
 
-// Serve uploaded files from the public folder dynamically
-export async function GET(request, { params }) {
+const TYPES = Object.freeze({
+  ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+  ".webp": "image/webp", ".pdf": "application/pdf",
+});
+
+async function mayReadPrivateFile(actualPath, root) {
+  const session = await auth();
+  if (!session?.user?.id || session.user.isActive === false) return false;
+  if (session.user.role === "SUPER_ADMIN") return true;
+
+  const ownerSegment = actualPath.split("/")[1];
+  if ((root === "payments" || root === "registration-files") && ownerSegment === session.user.id) return true;
+
+  const url = `/api/files/${actualPath}`;
+  if (root === "certificates") {
+    return Boolean(await prisma.certificate.findFirst({ where: { fileUrl: url, OR: [{ userId: session.user.id }, { event: { OR: [{ organizerId: session.user.id }, { tournament: { organizerId: session.user.id } }] } }] }, select: { id: true } }));
+  }
+  if (root === "payments") {
+    return Boolean(await prisma.registration.findFirst({ where: { paymentSs: url, OR: [{ userId: session.user.id }, { event: { OR: [{ organizerId: session.user.id }, { tournament: { organizerId: session.user.id } }, { financeAssignments: { some: { reviewerId: session.user.id, isActive: true } } }] } }] }, select: { id: true } }));
+  }
+  if (root === "registration-files") {
+    const eventSlug = actualPath.split("/")[2];
+    return Boolean(await prisma.registration.findFirst({ where: { userId: ownerSegment, event: { slug: eventSlug, OR: [{ organizerId: session.user.id }, { tournament: { organizerId: session.user.id } }] } }, select: { id: true } }));
+  }
+  return false;
+}
+
+export async function GET(_request, { params }) {
   try {
-    const { path: pathSegments } = await params
-    const filePath = pathSegments.join('/')
-    
-    // Security: prevent directory traversal
-    if (filePath.includes('..')) {
-      return NextResponse.json({ error: 'Invalid path' }, { status: 400 })
+    const { path: segments } = await params;
+    if (!Array.isArray(segments) || segments.some((part) => !part || part.startsWith(".") || !/^[a-zA-Z0-9._-]+$/.test(part))) {
+      return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+    }
+    const actualPath = segments.join("/");
+    const root = segments[0];
+    const policy = UPLOAD_FOLDERS[root];
+    const extension = path.extname(actualPath).toLowerCase();
+    const contentType = TYPES[extension];
+    if (!policy || !contentType || !policy.types.includes(contentType)) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (!policy.public && !(await mayReadPrivateFile(actualPath, root))) {
+      return NextResponse.json({ error: "Sign in or request access to view this file" }, { status: 403 });
     }
 
-    // Only allow specific root folders for uploads
-    const allowedFolders = ['profiles', 'events', 'uploads', 'sponsors', 'players', 'gallery', 'teams', 'payments']
-    const firstSegment = pathSegments[0]
-    
-    // Handle paths that might start with 'api/files' due to double rewrite
-    let actualPath = filePath
-    if (firstSegment === 'api' && pathSegments[1] === 'files') {
-      actualPath = pathSegments.slice(2).join('/')
-    }
-    
-    const actualFirstSegment = actualPath.split('/')[0]
-    if (!allowedFolders.includes(actualFirstSegment)) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
-    // Ensure the path ends with a file (has extension)
-    const lastSegment = actualPath.split('/').pop()
-    if (!lastSegment || !lastSegment.includes('.') || lastSegment.startsWith('.')) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
-
-    const absolutePath = path.join(process.cwd(), 'public', actualPath)
-    
-    // Check if file exists
-    try {
-      await stat(absolutePath)
-    } catch (e) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
-    }
-
-    const fileBuffer = await readFile(absolutePath)
-    
-    // Determine content type
-    const ext = path.extname(filePath).toLowerCase()
-    const contentTypes = {
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.gif': 'image/gif',
-      '.webp': 'image/webp',
-      '.svg': 'image/svg+xml',
-      '.pdf': 'application/pdf',
-    }
-    
-    const contentType = contentTypes[ext] || 'application/octet-stream'
-
-    return new NextResponse(fileBuffer, {
-      status: 200,
+    const absolutePath = resolveStoragePath(actualPath);
+    await stat(absolutePath);
+    const file = await readFile(absolutePath);
+    const isPrivate = !policy.public;
+    return new NextResponse(file, {
       headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
+        "Content-Type": contentType,
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": contentType === "application/pdf" ? "sandbox" : "default-src 'none'",
+        "Cache-Control": isPrivate ? "private, no-store" : "public, max-age=3600, stale-while-revalidate=86400",
+        "Content-Disposition": contentType === "application/pdf" ? `inline; filename="${path.basename(actualPath)}"` : "inline",
       },
-    })
+    });
   } catch (error) {
-    console.error('File serve error:', error)
-    return NextResponse.json({ error: 'Failed to serve file' }, { status: 500 })
+    if (error?.code === "ENOENT") return NextResponse.json({ error: "File not found" }, { status: 404 });
+    console.error("File serve error", { message: error?.message });
+    return NextResponse.json({ error: "Failed to serve file" }, { status: 500 });
   }
 }

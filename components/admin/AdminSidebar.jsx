@@ -17,6 +17,8 @@ import {
   Dumbbell,
   BarChart3,
   Images,
+  HeartHandshake,
+  Award,
   ChevronDown,
   ChevronRight
 } from "lucide-react";
@@ -37,7 +39,10 @@ export default function AdminSidebar({ userRole }) {
   };
 
   // Navigation structure with hierarchy
-  const navStructure = [
+  const navStructure = userRole === "FINANCE_REVIEWER" ? [
+    { href: "/admin/registrations", label: "Payment reviews", icon: ClipboardList },
+    { href: "/admin/refunds", label: "Refund queue", icon: ClipboardList },
+  ] : [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     {
       label: "Events",
@@ -46,9 +51,11 @@ export default function AdminSidebar({ userRole }) {
       children: [
         { href: "/admin/events", label: "All Events", icon: Calendar },
         { href: "/admin/registrations", label: "Registrations", icon: ClipboardList },
+        { href: "/admin/refunds", label: "Refund queue", icon: ClipboardList },
         { href: "/admin/teams", label: "Teams", icon: Trophy },
       ],
     },
+    { href: "/admin/community", label: "Event operations", icon: HeartHandshake },
   ];
 
   // Super Admin only items - Users and Gallery
@@ -64,6 +71,8 @@ export default function AdminSidebar({ userRole }) {
         ],
       },
       { href: "/admin/gallery", label: "Gallery", icon: Images },
+      { href: "/admin/certificates", label: "Certificates", icon: Award },
+      { href: "/admin/volunteers", label: "Volunteers", icon: HeartHandshake },
       {
         label: "Settings",
         icon: Settings,
@@ -131,7 +140,7 @@ export default function AdminSidebar({ userRole }) {
             <div>
               <span className="font-bold text-gray-900">GGF Admin</span>
               <span className="block text-xs text-gray-500">
-                {userRole === "SUPER_ADMIN" ? "Super Admin" : "Organizer"}
+                {userRole === "SUPER_ADMIN" ? "Super Admin" : userRole === "FINANCE_REVIEWER" ? "Finance Reviewer" : "Organizer"}
               </span>
             </div>
           </Link>

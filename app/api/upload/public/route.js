@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { normalizeUploadFolder, sanitizeFilename, validateFileContents, validateUpload } from '@/lib/upload-policy'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { storeFile } from '@/lib/file-storage'
 
 // Public upload endpoint for registration (no auth required)
 export async function POST(request) {
   try {
+    const forwarded = request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim()
+    const clientKey = request.headers.get('x-real-ip') || forwarded || 'unknown'
+    await checkRateLimit('public-upload', clientKey, 10, 60 * 60 * 1000)
     const formData = await request.formData()
     const file = formData.get('file')
-    const folder = formData.get('folder') || 'uploads'
+    const requestedFolder = formData.get('folder') || 'profiles'
 
     if (!file) {
       return NextResponse.json(
@@ -16,47 +20,28 @@ export async function POST(request) {
       )
     }
 
-    // Only allow images for public upload
-    if (!file.type.startsWith('image/')) {
-      return NextResponse.json(
-        { error: 'Only image files are allowed' },
-        { status: 400 }
-      )
-    }
+    const { folder, policy } = normalizeUploadFolder(requestedFolder)
+    if (folder !== 'profiles' || !policy.public) return NextResponse.json({ error: 'Only profile photos are accepted here' }, { status: 403 })
+    validateUpload(file, policy)
 
-    // Limit file size to 5MB
     const bytes = await file.arrayBuffer()
-    if (bytes.byteLength > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { error: 'File size must be less than 5MB' },
-        { status: 400 }
-      )
-    }
 
     const buffer = Buffer.from(bytes)
+    const { extension } = validateFileContents(buffer, file.type, policy)
 
     // Create unique filename
     const timestamp = Date.now()
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filename = `${timestamp}-${originalName}`
+    const originalName = sanitizeFilename(file.name).replace(/\.[^.]+$/, '')
+    const filename = `${timestamp}-${originalName}${extension}`
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), 'public', folder)
-    await mkdir(uploadDir, { recursive: true })
-
-    // Write file
-    const filepath = path.join(uploadDir, filename)
-    await writeFile(filepath, buffer)
-
-    // Return API URL for dynamic file serving (works in production)
-    const url = `/api/files/${folder}/${filename}`
+    const { url } = await storeFile({ folder, filename, buffer })
 
     return NextResponse.json({ url, filename, path: folder })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Upload failed' },
-      { status: 500 }
+      { error: error.message || 'Upload failed' },
+      { status: 400 }
     )
   }
 }

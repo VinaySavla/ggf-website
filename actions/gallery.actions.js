@@ -7,6 +7,11 @@ import { generateSlug } from "@/lib/utils";
 import { deleteFileFromStorage, deleteMultipleFilesFromStorage } from "@/lib/storage";
 
 // ==================== COLLECTIONS ====================
+export async function getGalleryEvents() {
+  const session = await auth();
+  if (!session || session.user.role !== "SUPER_ADMIN") return { error: "Unauthorized" };
+  return { events: await prisma.event.findMany({ select: { id: true, title: true }, orderBy: { eventDate: "desc" } }) };
+}
 
 export async function getCollections() {
   try {
@@ -45,11 +50,11 @@ export async function getCollection(slug) {
 export async function createCollection(data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
-    const { name, description, coverImage } = data;
+    const { name, description, coverImage, eventId } = data;
 
     // Generate unique slug
     let slug = generateSlug(name);
@@ -64,6 +69,7 @@ export async function createCollection(data) {
         slug,
         description,
         coverImage,
+        eventId: eventId || null,
       },
     });
 
@@ -79,11 +85,11 @@ export async function createCollection(data) {
 export async function updateCollection(id, data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
-    const { name, description, coverImage, isActive, sortOrder } = data;
+    const { name, description, coverImage, isActive, sortOrder, eventId } = data;
 
     const existing = await prisma.galleryCollection.findUnique({ where: { id } });
     if (!existing) {
@@ -111,6 +117,7 @@ export async function updateCollection(id, data) {
         coverImage,
         isActive,
         sortOrder,
+        ...(eventId !== undefined && { eventId: eventId || null }),
       },
     });
 
@@ -168,7 +175,7 @@ export async function deleteCollection(id) {
 export async function addImageToCollection(data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -208,7 +215,7 @@ export async function addImageToCollection(data) {
 export async function addMultipleImages(data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -248,7 +255,7 @@ export async function addMultipleImages(data) {
 export async function updateImage(id, data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -276,7 +283,7 @@ export async function updateImage(id, data) {
 export async function deleteImage(id) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -309,7 +316,7 @@ export async function deleteImage(id) {
 export async function deleteMultipleImages(ids) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 

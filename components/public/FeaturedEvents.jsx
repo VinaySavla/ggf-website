@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Calendar, MapPin, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
+import { sanitizeRichText } from "@/lib/sanitize";
 
 async function getUpcomingEvents() {
   try {
@@ -28,13 +29,14 @@ export default async function FeaturedEvents() {
   const events = await getUpcomingEvents();
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 lg:py-20 bg-white">
       <div className="container-custom">
-        <div className="text-center mb-12">
+        <div className="mb-10 max-w-2xl">
+          <p className="eyebrow mb-3">Make your next connection</p>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Upcoming Events
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 leading-7">
             Stay updated with our latest events and be part of our growing community.
           </p>
         </div>
@@ -44,7 +46,7 @@ export default async function FeaturedEvents() {
             {events.map((event) => (
               <div
                 key={event.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-100 flex flex-col"
+                className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-shadow duration-200 overflow-hidden border border-gray-200 flex flex-col"
               >
                 <div className="p-6 flex-1">
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4 ${
@@ -59,9 +61,7 @@ export default async function FeaturedEvents() {
                   <h3 className="text-xl font-semibold text-gray-900 mb-3">
                     {event.title}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {event.description?.replace(/<[^>]*>/g, '')}
-                  </p>
+                  <div className="text-gray-600 text-sm mb-4 line-clamp-2 break-words" dangerouslySetInnerHTML={{ __html: sanitizeRichText(event.description || "") }} />
                   <div className="space-y-2 mb-4">
                     {event.eventDate && (
                       <div className="flex items-center text-sm text-gray-500">
@@ -95,9 +95,10 @@ export default async function FeaturedEvents() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-xl">
-            <p className="text-gray-500">No upcoming events at the moment.</p>
-            <p className="text-gray-400 text-sm mt-2">Check back soon for new events!</p>
+          <div className="text-center px-6 py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+            <Calendar className="mx-auto mb-4 h-8 w-8 text-primary" aria-hidden="true"/>
+            <p className="font-semibold text-gray-800">Your next event is on the way</p>
+            <p className="text-gray-600 text-sm mt-2">Explore past events while new dates are being planned.</p>
           </div>
         )}
 

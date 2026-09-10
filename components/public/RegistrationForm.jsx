@@ -32,6 +32,15 @@ export default function RegistrationForm({ event }) {
     ? JSON.parse(event.formSchema) 
     : event.formSchema;
 
+  const draftKey = `ggf-registration-draft:${event.id}`;
+  useEffect(() => {
+    try { const draft = JSON.parse(localStorage.getItem(draftKey) || "null"); if (draft?.formData) setFormData(draft.formData); if (draft?.paymentData) setPaymentData(draft.paymentData); } catch {}
+  }, [draftKey]);
+  useEffect(() => {
+    const timer = setTimeout(() => localStorage.setItem(draftKey, JSON.stringify({ formData, paymentData, savedAt: new Date().toISOString() })), 400);
+    return () => clearTimeout(timer);
+  }, [draftKey, formData, paymentData]);
+
   // Auto-fill mandatory fields from user session
   useEffect(() => {
     if (session?.user) {
@@ -225,8 +234,9 @@ export default function RegistrationForm({ event }) {
       if (result.error) {
         toast.error(result.error);
       } else {
+        localStorage.removeItem(draftKey);
         toast.success("Registration successful! Payment will be verified shortly.");
-        router.push("/events");
+        router.push(`/my-registrations/${result.registrationId}`);
       }
     } catch (error) {
       toast.error("Failed to submit registration");
@@ -649,8 +659,12 @@ export default function RegistrationForm({ event }) {
           
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800 mb-6">
             <p className="font-medium">⚠️ Payment Required</p>
-            <p className="mt-1">Please complete the payment before submitting your registration.</p>
+            <p className="mt-1">Please pay {event.paymentAmount ? `₹${event.paymentAmount}` : "the event amount"} and submit proof for manual verification.</p>
+            <p className="mt-1">Expected review time: within {event.paymentReviewHours || 48} hours.</p>
           </div>
+          {event.upiId && <div className="bg-gray-50 rounded-lg p-4 mb-4"><p className="text-xs text-gray-500">UPI ID</p><p className="font-mono font-semibold select-all">{event.upiId}</p></div>}
+          {event.paymentInstructions && <p className="text-sm text-gray-600 whitespace-pre-line mb-4">{event.paymentInstructions}</p>}
+          {event.refundPolicy && <details className="text-sm border rounded-lg p-3 mb-4"><summary className="font-medium cursor-pointer">Refund policy</summary><p className="text-gray-600 whitespace-pre-line mt-2">{event.refundPolicy}</p></details>}
 
           {/* UPI QR Code */}
           {event.upiQrImage && (

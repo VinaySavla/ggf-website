@@ -1,7 +1,8 @@
 import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { normalizeUploadFolder, sanitizeFilename, validateFileContents, validateUpload } from '@/lib/upload-policy'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { storeFile } from '@/lib/file-storage'
 
 export async function POST(request) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request) {
 
     const formData = await request.formData()
     const file = formData.get('file')
-    const folder = formData.get('folder') || 'uploads'
+    const requestedFolder = formData.get('folder') || 'events'
     const eventSlug = formData.get('eventSlug') || ''
     const fieldName = formData.get('fieldName') || ''
 
@@ -27,42 +28,37 @@ export async function POST(request) {
       )
     }
 
+    let uploadPath = requestedFolder
+    if (requestedFolder === 'payments') uploadPath = `payments/${session.user.id}`
+    if (String(requestedFolder).startsWith('registration-files')) uploadPath = `registration-files/${session.user.id}`
+    if (eventSlug) {
+      const sanitizedFieldName = String(fieldName || 'files').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
+      uploadPath = `registration-files/${session.user.id}/${String(eventSlug).replace(/[^a-zA-Z0-9_-]/g, '')}/${sanitizedFieldName}`
+    }
+    await checkRateLimit('authenticated-upload', session.user.id, 100, 60 * 60 * 1000)
+    const { folder: safeFolder, policy } = normalizeUploadFolder(uploadPath)
+    if (policy.adminOnly && !['ORGANIZER', 'SUPER_ADMIN'].includes(session.user.role)) {
+      return NextResponse.json({ error: 'Administrator access required for this folder' }, { status: 403 })
+    }
+    validateUpload(file, policy)
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+    const { extension } = validateFileContents(buffer, file.type, policy)
 
     // Create unique filename
     const timestamp = Date.now()
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filename = `${timestamp}-${originalName}`
+    const originalName = sanitizeFilename(file.name).replace(/\.[^.]+$/, '')
+    const filename = `${timestamp}-${originalName}${extension}`
 
-    // Build folder path - support event-specific paths
-    let uploadPath = folder
-    if (eventSlug) {
-      uploadPath = `events/${eventSlug}`
-      if (fieldName) {
-        // Sanitize field name for folder
-        const sanitizedFieldName = fieldName.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase()
-        uploadPath = `${uploadPath}/${sanitizedFieldName}`
-      }
-    }
+    const { url } = await storeFile({ folder: safeFolder, filename, buffer })
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), 'public', uploadPath)
-    await mkdir(uploadDir, { recursive: true })
-
-    // Write file
-    const filepath = path.join(uploadDir, filename)
-    await writeFile(filepath, buffer)
-
-    // Return API URL for dynamic file serving (works in production)
-    const url = `/api/files/${uploadPath}/${filename}`
-
-    return NextResponse.json({ url, filename, path: uploadPath })
+    return NextResponse.json({ url, filename, path: safeFolder })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Upload failed' },
-      { status: 500 }
+      { error: /file|upload|folder/i.test(error.message || '') ? error.message : 'Upload failed' },
+      { status: /file|upload|folder/i.test(error.message || '') ? 400 : 500 }
     )
   }
 }

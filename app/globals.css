@@ -23,7 +23,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 276 70% 36%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   * {
@@ -37,6 +37,17 @@
   html {
     @apply scroll-smooth;
   }
+
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 3px solid #9D3DFF;
+    outline-offset: 3px;
+  }
+
+  :where(input, select, textarea):disabled { cursor: not-allowed; opacity: 0.65; }
+  :where(button):disabled { cursor: not-allowed; }
+  h1, h2, h3 { text-wrap: balance; }
+  :where(input, select, textarea) { accent-color: #6B1E9B; }
+  ::selection { background: #E8CCFF; color: #370E50; }
 }
 
 @layer components {
@@ -45,15 +56,21 @@
   }
 
   .btn-primary {
-    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-colors duration-200 shadow-sm focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
+
+  .btn-secondary { @apply inline-flex items-center justify-center rounded-xl border border-primary/20 bg-white px-6 py-3 font-semibold text-primary-800 transition-colors hover:bg-primary-50; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.18em] text-primary; }
+  .home-hero { background: radial-gradient(ellipse at 85% 20%, #ede0f8 0%, transparent 55%), linear-gradient(120deg, #faf8fc, #f5f0fa); }
+  .skip-link { @apply sr-only; }
+  .skip-link:focus { @apply not-sr-only absolute left-4 top-4 z-[100] rounded-lg bg-primary px-5 py-3 text-white; }
 
   .btn-accent {
     @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-all duration-200 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 p-6;
+    @apply bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 p-6;
   }
 
   .gradient-primary {
@@ -63,6 +80,16 @@
   .gradient-accent {
     @apply bg-gradient-to-r from-accent to-blue-700;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+@media print {
+  body { background: white; }
+  footer { display: none; }
 }
 
 @layer utilities {

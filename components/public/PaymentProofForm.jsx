@@ -128,6 +128,8 @@ export default function PaymentProofForm({ registrationId }) {
           <label htmlFor="screenshot-upload" className="cursor-pointer">
             {previewUrl ? (
               <div>
+                {/* Blob previews are browser-local and cannot use the Next image optimizer. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
                   alt="Payment screenshot preview"

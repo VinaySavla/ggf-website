@@ -29,12 +29,12 @@ async function getDashboardStats(userId, role) {
     totalAccounts,
   ] = await Promise.all([
     prisma.event.count(isAdmin ? {} : {
-      where: { tournament: { organizerId: userId } }
+      where: { OR: [{ organizerId: userId }, { tournament: { organizerId: userId } }] }
     }),
     prisma.registration.count({
       where: { 
         paymentStatus: "pending",
-        ...(isAdmin ? {} : { event: { tournament: { organizerId: userId } } })
+        ...(isAdmin ? {} : { event: { OR: [{ organizerId: userId }, { tournament: { organizerId: userId } }] } })
       }
     }),
     prisma.masterPlayer.count(),
@@ -42,7 +42,7 @@ async function getDashboardStats(userId, role) {
   ]);
 
   const recentRegistrations = await prisma.registration.findMany({
-    where: isAdmin ? {} : { event: { tournament: { organizerId: userId } } },
+    where: isAdmin ? {} : { event: { OR: [{ organizerId: userId }, { tournament: { organizerId: userId } }] } },
     take: 5,
     orderBy: { createdAt: "desc" },
     include: { event: true },

@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
+import { isAdminRole } from '@/lib/roles'
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
@@ -13,14 +14,17 @@ export default auth((req) => {
     }
     
     // Only ORGANIZER and SUPER_ADMIN can access admin
-    if (userRole !== 'ORGANIZER' && userRole !== 'SUPER_ADMIN') {
+    if (!isAdminRole(userRole)) {
       return NextResponse.redirect(new URL('/', req.url))
+    }
+    if (userRole === 'FINANCE_REVIEWER' && !pathname.startsWith('/admin/registrations') && !pathname.startsWith('/admin/refunds')) {
+      return NextResponse.redirect(new URL('/admin/registrations', req.url))
     }
   }
 
   // Redirect logged-in users away from login/register
   if (isLoggedIn && (pathname === '/login' || pathname === '/register')) {
-    if (userRole === 'PLAYER') {
+    if (userRole === 'USER') {
       return NextResponse.redirect(new URL('/', req.url))
     }
     return NextResponse.redirect(new URL('/admin', req.url))

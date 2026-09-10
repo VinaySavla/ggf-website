@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { unlink } from 'fs/promises'
-import path from 'path'
+import { resolveStoragePath } from '@/lib/upload-policy'
 
 export async function PUT(request) {
   try {
@@ -16,6 +16,9 @@ export async function PUT(request) {
     }
 
     const { userId, newPhotoUrl, oldPhotoUrl } = await request.json()
+    if (!/^\/api\/files\/profiles\/[a-zA-Z0-9._/-]+$/.test(newPhotoUrl || '') || newPhotoUrl.includes('..')) {
+      return NextResponse.json({ error: 'Invalid profile photo URL' }, { status: 400 })
+    }
 
     // Check permissions: Admin can update anyone, users can only update themselves
     const isAdmin = session.user.role === 'SUPER_ADMIN'
@@ -46,7 +49,8 @@ export async function PUT(request) {
     // Delete old photo file if it exists and is a local file
     if (oldPhotoUrl && oldPhotoUrl.startsWith('/')) {
       try {
-        const filePath = path.join(process.cwd(), 'public', oldPhotoUrl)
+        const relativePath = oldPhotoUrl.startsWith('/api/files/') ? oldPhotoUrl.slice(11) : oldPhotoUrl.replace(/^\/+/, '')
+        const filePath = resolveStoragePath(relativePath)
         await unlink(filePath)
         console.log('Deleted old photo:', oldPhotoUrl)
       } catch (deleteError) {

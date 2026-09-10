@@ -5,7 +5,7 @@ export default function PublicLayout({ children }) {
   return (
     <>
       <Navbar />
-      <main className="min-h-screen">{children}</main>
+      <div id="page-content" tabIndex={-1} className="min-h-screen outline-none">{children}</div>
       <Footer />
     </>
   );

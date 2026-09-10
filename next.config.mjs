@@ -1,12 +1,12 @@
+const approvedImageHosts = (process.env.NEXT_PUBLIC_IMAGE_HOSTS || '')
+  .split(',')
+  .map((host) => host.trim())
+  .filter(Boolean)
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-    ],
+    remotePatterns: approvedImageHosts.map((hostname) => ({ protocol: 'https', hostname })),
   },
   experimental: {
     serverActions: {
@@ -22,14 +22,6 @@ const nextConfig = {
         destination: '/api/files/profiles/:path*',
       },
       {
-        source: '/uploads/:path*',
-        destination: '/api/files/uploads/:path*',
-      },
-      {
-        source: '/sponsors/:path*',
-        destination: '/api/files/sponsors/:path*',
-      },
-      {
         source: '/gallery/:path*',
         destination: '/api/files/gallery/:path*',
       },
@@ -41,11 +33,17 @@ const nextConfig = {
         source: '/payments/:path*',
         destination: '/api/files/payments/:path*',
       },
-      {
-        source: '/players/:path*',
-        destination: '/api/files/players/:path*',
-      },
     ]
+  },
+  async headers() {
+    return [{
+      source: '/:path*',
+      headers: [
+        { key: 'Content-Security-Policy', value: "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+      ],
+    }]
   },
 }
 

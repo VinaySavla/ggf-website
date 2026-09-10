@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 import { Trophy, Plus, Users } from "lucide-react";
 import TeamActions from "@/components/admin/TeamActions";
 
@@ -63,7 +64,7 @@ export default async function TeamsPage() {
                   style={{ backgroundColor: team.color || '#6B1E9B' }}
                 >
                   {team.logo ? (
-                    <img src={team.logo} alt={team.name} className="w-10 h-10 object-contain" />
+                    <Image src={team.logo} alt={team.name} width={40} height={40} className="w-10 h-10 object-contain" />
                   ) : (
                     <Trophy className="w-7 h-7 text-white" />
                   )}
@@ -78,6 +79,7 @@ export default async function TeamsPage() {
                 <Users className="w-4 h-4 mr-2" />
                 {team._count.rosters} players
               </div>
+              <Link href={`/admin/tournaments/${team.tournamentId}`} className="inline-block text-primary text-sm font-medium mt-4">Fixtures & results →</Link>
             </div>
           ))}
         </div>

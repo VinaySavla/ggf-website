@@ -14,6 +14,8 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [showReject, setShowReject] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Parse formSchema to get field labels
   const parsedSchema = typeof formSchema === 'string' ? JSON.parse(formSchema || '[]') : (formSchema || []);
@@ -28,15 +30,17 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
     return value.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) || value.includes('/events/');
   };
 
-  const handleStatusUpdate = async (newStatus) => {
+  const handleStatusUpdate = async (newStatus, reason = null) => {
     setIsLoading(true);
     try {
-      const result = await updatePaymentStatus(registrationId, newStatus);
+      const result = await updatePaymentStatus(registrationId, newStatus, reason);
       if (result.error) {
         toast.error(result.error);
       } else {
         toast.success(`Registration ${newStatus === "paid" ? "approved" : "rejected"}`);
         router.refresh();
+        setShowReject(false);
+        setRejectionReason("");
       }
     } catch (error) {
       toast.error("Failed to update status");
@@ -86,6 +90,7 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
                 width={800}
                 height={600}
                 className="max-w-full max-h-[85vh] object-contain rounded-lg"
+                unoptimized
               />
             </div>
           </div>
@@ -129,6 +134,7 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
                                 alt={fieldLabel}
                                 fill
                                 className="object-contain"
+                                unoptimized
                               />
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition">
                                 <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition" />
@@ -221,6 +227,7 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
 
   return (
     <div className="flex items-center justify-end space-x-2">
+      {showReject && <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"><div className="bg-white rounded-xl p-6 w-full max-w-md text-left"><h3 className="font-bold text-lg">Why is this payment being rejected?</h3><p className="text-sm text-gray-500 mt-1">The member will see this reason and can submit corrected proof.</p><textarea value={rejectionReason} onChange={(e)=>setRejectionReason(e.target.value)} className="w-full border rounded-lg p-3 mt-4" rows={4} placeholder="Example: Transaction number is unclear or screenshot does not show the completed payment."/><div className="flex justify-end gap-3 mt-4"><button onClick={()=>setShowReject(false)}>Cancel</button><button disabled={!rejectionReason.trim()} onClick={()=>handleStatusUpdate("rejected",rejectionReason)} className="bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50">Reject and notify</button></div></div></div>}
       {isLoading ? (
         <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
       ) : (
@@ -254,7 +261,7 @@ export default function RegistrationActions({ registrationId, currentStatus, isP
                 <CheckCircle className="w-5 h-5" />
               </button>
               <button
-                onClick={() => handleStatusUpdate("rejected")}
+                onClick={() => setShowReject(true)}
                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                 title="Reject"
               >

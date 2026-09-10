@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import EventForm from "@/components/admin/EventForm";
+import FinanceReviewerManager from "@/components/admin/FinanceReviewerManager";
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,11 @@ async function getEvent(id, userId, role) {
   if (!event) return null;
 
   // Check ownership for organizers
-  if (role === "ORGANIZER" && event.tournament?.organizerId !== userId) {
+  if (
+    role === "ORGANIZER" &&
+    event.organizerId !== userId &&
+    event.tournament?.organizerId !== userId
+  ) {
     return null;
   }
 
@@ -53,9 +58,11 @@ export default async function EditEventPage({ params }) {
     notFound();
   }
 
-  const [organizers, sports] = await Promise.all([
+  const [organizers, sports, members, assignments] = await Promise.all([
     session.user.role === "SUPER_ADMIN" ? getOrganizers() : [],
     getSports(),
+    prisma.user.findMany({ where: { isActive: true }, select: { id: true, firstName: true, surname: true, email: true, mobile: true }, orderBy: { firstName: "asc" }, take: 500 }),
+    prisma.eventFinanceAssignment.findMany({ where: { eventId: id, isActive: true }, include: { reviewer: { select: { id: true, firstName: true, surname: true, email: true, mobile: true } } } }),
   ]);
 
   return (
@@ -74,6 +81,7 @@ export default async function EditEventPage({ params }) {
           userId={session.user.id}
         />
       </div>
+      <FinanceReviewerManager eventId={id} members={members} assignments={assignments} />
     </div>
   );
 }

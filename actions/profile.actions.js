@@ -8,7 +8,7 @@ import { revalidatePath } from "next/cache";
 export async function getProfile() {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session || session.user.isActive === false) {
       return { error: "Not authenticated" };
     }
 
@@ -25,6 +25,13 @@ export async function getProfile() {
         role: true,
         gender: true,
         village: true,
+        education: true,
+        profession: true,
+        skills: true,
+        interests: true,
+        isDirectoryVisible: true,
+        isMentorAvailable: true,
+        notificationPreferences: true,
         createdAt: true,
         userProfile: {
           select: {
@@ -50,22 +57,14 @@ export async function getProfile() {
 export async function updateProfile(data) {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session || session.user.isActive === false) {
       return { error: "Not authenticated" };
     }
 
-    const { firstName, middleName, surname, email, mobile, bio, gender, village } = data;
+    const { firstName, middleName, surname, email, mobile, bio, gender, village, education, profession, skills, interests, isDirectoryVisible, isMentorAvailable, notificationPreferences } = data;
+    if (!firstName || !middleName || !surname || !email || !mobile || !gender || !village) return { error: "All mandatory profile fields are required" };
+    if (!/^\d{10}$/.test(mobile)) return { error: "Mobile number must be exactly 10 digits" };
     
-    // Validate single word per name field
-    if (firstName && firstName.trim().split(/\s+/).length > 1) {
-      return { error: "First name should be a single word only" };
-    }
-    if (middleName && middleName.trim().split(/\s+/).length > 1) {
-      return { error: "Middle name should be a single word only" };
-    }
-    if (surname && surname.trim().split(/\s+/).length > 1) {
-      return { error: "Surname should be a single word only" };
-    }
 
     // Check if email/mobile already used by another user
     const existingUser = await prisma.user.findFirst({
@@ -74,7 +73,7 @@ export async function updateProfile(data) {
           { id: { not: session.user.id } },
           {
             OR: [
-              email ? { email } : {},
+              email ? { email: { equals: email.trim().toLowerCase(), mode: "insensitive" } } : {},
               mobile ? { mobile } : {},
             ].filter(obj => Object.keys(obj).length > 0),
           },
@@ -95,10 +94,17 @@ export async function updateProfile(data) {
           firstName: firstName?.trim(),
           middleName: middleName?.trim(),
           surname: surname?.trim(),
-          email,
-          mobile,
+          email: email.trim().toLowerCase(),
+          mobile: mobile.trim(),
           gender,
           village,
+          education: education?.trim() || null,
+          profession: profession?.trim() || null,
+          skills: Array.isArray(skills) ? skills.filter(Boolean) : [],
+          interests: Array.isArray(interests) ? interests.filter(Boolean) : [],
+          isDirectoryVisible: Boolean(isDirectoryVisible),
+          isMentorAvailable: Boolean(isMentorAvailable),
+          ...(notificationPreferences && { notificationPreferences }),
         },
       });
 
@@ -125,11 +131,12 @@ export async function updateProfile(data) {
 export async function changePassword(data) {
   try {
     const session = await auth();
-    if (!session) {
+    if (!session || session.user.isActive === false) {
       return { error: "Not authenticated" };
     }
 
     const { currentPassword, newPassword } = data;
+    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) return { error: "Password must be at least 8 characters and include a letter and number" };
 
     // Get user with password
     const user = await prisma.user.findUnique({

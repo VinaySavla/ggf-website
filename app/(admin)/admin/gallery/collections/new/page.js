@@ -7,17 +7,19 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { Loader2, Camera, X, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { createCollection } from "@/actions/gallery.actions";
+import { createCollection, getGalleryEvents } from "@/actions/gallery.actions";
 
 export default function NewCollectionPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [events, setEvents] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     coverImage: "",
+    eventId: "",
   });
 
   // Redirect non-super-admins
@@ -26,6 +28,7 @@ export default function NewCollectionPage() {
       router.push("/admin");
     }
   }, [session, status, router]);
+  useEffect(() => { if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") getGalleryEvents().then(result => setEvents(result.events || [])); }, [session, status]);
 
   if (status === "loading") {
     return (
@@ -183,6 +186,10 @@ export default function NewCollectionPage() {
           </div>
 
           {/* Description */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Related event <span className="text-gray-400">(Optional)</span></label>
+            <select value={formData.eventId} onChange={(e)=>setFormData({...formData,eventId:e.target.value})} className="w-full border rounded-lg px-4 py-3"><option value="">No related event</option>{events.map(event=><option key={event.id} value={event.id}>{event.title}</option>)}</select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description <span className="text-gray-400">(Optional)</span>

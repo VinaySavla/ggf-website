@@ -2,6 +2,7 @@ import HeroSection from "@/components/public/HeroSection";
 import FeaturedEvents from "@/components/public/FeaturedEvents";
 import AboutSection from "@/components/public/AboutSection";
 import StatsSection from "@/components/public/StatsSection";
+import PortalBenefits from "@/components/public/PortalBenefits";
 
 // Force dynamic rendering since we fetch from database
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,7 @@ export default function HomePage() {
       <HeroSection />
       <FeaturedEvents />
       <AboutSection />
+      <PortalBenefits />
       <StatsSection />
     </>
   );

@@ -1,0 +1,7 @@
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { VolunteerButton } from "@/components/public/CommunityForms";
+import { formatDate } from "@/lib/utils";
+
+export const dynamic="force-dynamic";
+export default async function VolunteerPage(){const session=await auth();const items=await prisma.volunteerOpportunity.findMany({where:{isActive:true},include:{_count:{select:{applications:true}}},orderBy:[{eventDate:"asc"},{createdAt:"desc"}]});return <div className="py-12"><div className="container-custom max-w-4xl"><h1 className="text-3xl font-bold">Volunteer with GGF</h1><p className="text-gray-600 mt-2 mb-8">Contribute your time, skills and experience to community initiatives.</p><div className="space-y-4">{items.map(item=><article key={item.id} className="border rounded-xl p-6"><div className="flex justify-between gap-4"><div><h2 className="font-bold text-xl">{item.title}</h2><p className="text-sm text-gray-500">{item.eventDate?formatDate(item.eventDate):"Flexible date"}{item.location?` · ${item.location}`:""}</p></div>{item.capacity&&<span className="text-sm">{item._count.applications}/{item.capacity}</span>}</div><p className="text-gray-600 mt-3">{item.description}</p><div className="mt-4">{session?<VolunteerButton opportunityId={item.id}/>:<a href="/login?callbackUrl=/volunteer" className="text-primary">Sign in to volunteer</a>}</div></article>)}{!items.length&&<p className="bg-gray-50 p-10 text-center text-gray-500 rounded-xl">No active volunteer opportunities.</p>}</div></div></div>}

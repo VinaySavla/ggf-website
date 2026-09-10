@@ -16,10 +16,10 @@ async function getEvents(userId, role) {
   const isAdmin = role === "SUPER_ADMIN";
   
   const events = await prisma.event.findMany({
-    where: isAdmin ? {} : { tournament: { organizerId: userId } },
+    where: isAdmin ? {} : { OR: [{ organizerId: userId }, { tournament: { organizerId: userId } }] },
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { registrations: true } },
+      _count: { select: { registrations: { where: { status: "active" } } } },
       tournament: {
         include: {
           organizer: { 

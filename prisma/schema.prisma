@@ -9,24 +9,56 @@ generator client {
 
 // 1. AUTH & USERS
 model User {
-  id         String    @id @default(cuid())
-  firstName  String
-  middleName String
-  surname    String
-  email      String?   @unique
-  mobile     String?   @unique
-  password   String    // Hashed
-  photo     String?    // Profile picture URL
-  gender    String?   // "Male", "Female", "Other"
-  village   String?   // User's village name
-  role      String    @default("USER") // "USER", "ORGANIZER", "SUPER_ADMIN"
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                      String   @id @default(cuid())
+  firstName               String
+  middleName              String
+  surname                 String
+  email                   String?  @unique
+  mobile                  String?  @unique
+  password                String // Hashed
+  photo                   String? // Profile picture URL
+  gender                  String? // "Male", "Female", "Other"
+  village                 String? // User's village name
+  role                    String   @default("USER") // "USER", "ORGANIZER", "SUPER_ADMIN"
+  isActive                Boolean  @default(true)
+  education               String?
+  profession              String?
+  skills                  String[] @default([])
+  interests               String[] @default([])
+  isDirectoryVisible      Boolean  @default(false)
+  isMentorAvailable       Boolean  @default(false)
+  notificationPreferences Json     @default("{\"email\":true,\"inApp\":true,\"eventReminders\":true,\"communityUpdates\":true}")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
-  userProfile        MasterPlayer?
-  createdEvents      TournamentMaster[]
-  passwordResetToken PasswordResetToken?
+  userProfile           MasterPlayer?
+  createdEvents         TournamentMaster[]
+  organizedEvents       Event[]                  @relation("EventOrganizer")
+  passwordResetToken    PasswordResetToken?
+  loginCodes            LoginCode[]
+  registrations         Registration[]
+  reviewedPayments      Registration[]           @relation("PaymentReviewer")
+  financeAssignments    EventFinanceAssignment[] @relation("FinanceReviewer")
+  assignedFinanceUsers  EventFinanceAssignment[] @relation("FinanceAssigner")
+  paymentReviews        PaymentReview[]          @relation("PaymentReviewActor")
+  reviewedRefunds       RefundRequest[]          @relation("RefundReviewer")
+  auditLogs             AuditLog[]               @relation("AuditActor")
+  bookmarks             EventBookmark[]
+  waitlistEntries       EventWaitlist[]
+  notifications         Notification[]
+  attendances           EventAttendance[]
+  certificates          Certificate[]
+  authoredAnnouncements Announcement[]           @relation("AnnouncementAuthor")
+  createdOpportunities  Opportunity[]            @relation("OpportunityCreator")
+  mentorshipsAsMentor   Mentorship[]             @relation("Mentor")
+  mentorshipsAsMentee   Mentorship[]             @relation("Mentee")
+  businessProfile       BusinessProfile?
+  volunteerApplications VolunteerApplication[]
+  eventFeedback         EventFeedback[]
+  blocksCreated         MemberBlock[]            @relation("Blocker")
+  blocksReceived        MemberBlock[]            @relation("Blocked")
+  reportsCreated        CommunityReport[]        @relation("Reporter")
+  reportsReceived       CommunityReport[]        @relation("ReportedMember")
 
   @@map("users")
 }
@@ -42,108 +74,142 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+model LoginCode {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+  @@map("login_codes")
+}
+
 // 2. MASTER PLAYER & STATS
 model MasterPlayer {
-  id        String    @id @default(cuid())
-  playerId  String    @unique // The "YYYYMMDDhhmm0001" ID format
-  
+  id       String @id @default(cuid())
+  playerId String @unique // The "YYYYMMDDhhmm0001" ID format
+
   // User link is optional - players can exist without a user account
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String?   @unique
-  
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String? @unique
+
   // Player details (used when no user account linked)
   firstName  String?
   middleName String?
   surname    String?
   email      String?
   mobile     String?
-  
+
   photo     String?
   bio       String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  statsRecords       PlayerStatsRecord[]
-  tournamentRosters  TournamentRoster[]
+  statsRecords      PlayerStatsRecord[]
+  tournamentRosters TournamentRoster[]
 
   @@map("master_players")
 }
 
 model PlayerIdSequence {
-  yearMonth   String  @id @unique // "YYYYMMDDhhmm", e.g., "202601081430"
-  lastIndex   Int
+  yearMonth String @id @unique // "YYYYMMDDhhmm", e.g., "202601081430"
+  lastIndex Int
 
   @@map("player_id_sequences")
 }
 
 model Sport {
-  id            String               @id @default(cuid())
-  name          String               @unique // "Turf Cricket", "Kabaddi"
-  description   String?
-  createdAt     DateTime             @default(now())
-  
-  statsRecords  PlayerStatsRecord[]
-  events        EventSport[]
+  id          String   @id @default(cuid())
+  name        String   @unique // "Turf Cricket", "Kabaddi"
+  description String?
+  createdAt   DateTime @default(now())
+
+  statsRecords    PlayerStatsRecord[]
+  events          EventSport[]
+  statDefinitions SportStatDefinition[]
+  tournaments     TournamentMaster[]
 
   @@map("sports")
 }
 
 model PlayerStatsRecord {
-  id              String            @id @default(cuid())
-  player          MasterPlayer      @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  playerId        String
-  tournament      TournamentMaster? @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  tournamentId    String?
-  sport           Sport             @relation(fields: [sportId], references: [id])
-  sportId         String
-  
+  id           String            @id @default(cuid())
+  player       MasterPlayer      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId     String
+  tournament   TournamentMaster? @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId String?
+  sport        Sport             @relation(fields: [sportId], references: [id])
+  sportId      String
+
   // Optional label for general stats (e.g., "Season 2024", "Career Stats")
-  label           String?
-  
+  label String?
+
   // Polymorphic stats, e.g., { "runs": 100, "wickets": 5 }
-  statsJson       Json
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  statsJson Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("player_stats_records")
 }
 
 // 3. EVENTS & TOURNAMENTS
 model Event {
-  id              String   @id @default(cuid())
-  title           String
-  description     String?  @db.Text // WYSIWYG HTML content
-  eligibility     String?  @db.Text // WYSIWYG HTML content
-  slug            String   @unique
-  type            String   // "Seminar", "Competition", "Tournament"
-  tournamentType  String?  // "General" or "Village Specific" - only for Tournament type
-  isPaid          Boolean  @default(false)
-  upiQrImage      String?  // URL to uploaded QR
-  eventDate       DateTime?
-  venue           String?
-  village         String?   // Village name for the event
-  
+  id                  String    @id @default(cuid())
+  title               String
+  description         String?   @db.Text // WYSIWYG HTML content
+  eligibility         String?   @db.Text // WYSIWYG HTML content
+  slug                String    @unique
+  type                String // "Seminar", "Competition", "Tournament"
+  tournamentType      String? // "General" or "Village Specific" - only for Tournament type
+  isPaid              Boolean   @default(false)
+  upiQrImage          String? // URL to uploaded QR
+  paymentAmount       Int?
+  upiId               String?
+  paymentInstructions String?   @db.Text
+  paymentReviewHours  Int       @default(48)
+  refundPolicy        String?   @db.Text
+  eventDate           DateTime?
+  venue               String?
+  village             String? // Village name for the event
+  category            String?
+  organizer           User?     @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: SetNull)
+  organizerId         String?
+
   // Registration window
   registrationStartDate DateTime?
   registrationEndDate   DateTime?
-  
+
   // Registration limits
-  registrationCountType String  @default("common") // "common" or "separate"
-  maxMaleRegistrations  Int?    // Only used if registrationCountType is "separate"
-  maxFemaleRegistrations Int?   // Only used if registrationCountType is "separate"
-  maxTotalRegistrations Int?    // Only used if registrationCountType is "common"
-  
+  registrationCountType  String @default("common") // "common" or "separate"
+  maxMaleRegistrations   Int? // Only used if registrationCountType is "separate"
+  maxFemaleRegistrations Int? // Only used if registrationCountType is "separate"
+  maxOtherRegistrations  Int? // Only used if registrationCountType is "separate"
+  maxTotalRegistrations  Int? // Only used if registrationCountType is "common"
+
   // Dynamic form definition
-  formSchema      Json     @default("[]")
-  
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  formSchema Json @default("[]")
 
-  registrations   Registration[]
-  tournament      TournamentMaster?
-  sports          EventSport[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  registrations      Registration[]
+  tournament         TournamentMaster?
+  sports             EventSport[]
+  bookmarks          EventBookmark[]
+  waitlistEntries    EventWaitlist[]
+  attendances        EventAttendance[]
+  certificates       Certificate[]
+  announcements      Announcement[]
+  feedback           EventFeedback[]
+  galleryCollections GalleryCollection[]
+  financeAssignments EventFinanceAssignment[]
+
+  @@index([isActive, eventDate])
+  @@index([organizerId])
   @@map("events")
 }
 
@@ -160,52 +226,57 @@ model EventSport {
 }
 
 model TournamentMaster {
-  id           String             @id @default(cuid())
-  event        Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId      String             @unique
-  organizer    User?              @relation(fields: [organizerId], references: [id])
-  organizerId  String?
-  sportId      String?
-  
-  startDate    DateTime?
-  endDate      DateTime?
-  status       String             @default("upcoming") // upcoming, ongoing, completed
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id          String  @id @default(cuid())
+  event       Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String  @unique
+  organizer   User?   @relation(fields: [organizerId], references: [id])
+  organizerId String?
+  sport       Sport?  @relation(fields: [sportId], references: [id], onDelete: SetNull)
+  sportId     String?
+
+  startDate DateTime?
+  endDate   DateTime?
+  status    String    @default("upcoming") // upcoming, ongoing, completed
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   teams        Team[]
   rosters      TournamentRoster[]
   statsRecords PlayerStatsRecord[]
+  matches      TournamentMatch[]
 
   @@map("tournament_masters")
 }
 
 model Team {
-  id             String             @id @default(cuid())
-  name           String
-  logo           String?
-  gender         String?            // "Male" or "Female"
-  tournament     TournamentMaster   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  tournamentId   String
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  
-  rosters        TournamentRoster[]
+  id           String           @id @default(cuid())
+  name         String
+  logo         String?
+  gender       String? // "Male" or "Female"
+  tournament   TournamentMaster @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  rosters     TournamentRoster[]
+  homeMatches TournamentMatch[]  @relation("HomeTeam")
+  awayMatches TournamentMatch[]  @relation("AwayTeam")
+  wonMatches  TournamentMatch[]  @relation("WinningTeam")
 
   @@map("teams")
 }
 
 model TournamentRoster {
-  id             String           @id @default(cuid())
-  player         MasterPlayer     @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  playerId       String
-  tournament     TournamentMaster @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
-  tournamentId   String
-  team           Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId         String
-  auctionPrice   BigInt           @default(0)
-  role           String?          // e.g., "Captain", "Vice-Captain"
-  createdAt      DateTime         @default(now())
+  id           String           @id @default(cuid())
+  player       MasterPlayer     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId     String
+  tournament   TournamentMaster @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId String
+  team         Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId       String
+  auctionPrice BigInt           @default(0)
+  role         String? // e.g., "Captain", "Vice-Captain"
+  createdAt    DateTime         @default(now())
 
   @@unique([playerId, tournamentId])
   @@map("tournament_rosters")
@@ -213,52 +284,417 @@ model TournamentRoster {
 
 // 4. REGISTRATIONS
 model Registration {
-  id              String   @id @default(cuid())
-  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId         String
-  
-  // Dynamic form answers
-  userData        Json
-  
-  // Gender for registration counts
-  gender          String?  // "Male", "Female", "Other" - extracted from userData or user profile
-  
-  paymentStatus   String   @default("pending") // "pending", "paid", "rejected"
-  transactionId   String?
-  paymentSs       String?  // URL to uploaded screenshot
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  event              Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId            String
+  user               User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId             String?
+  registrationNumber String    @unique
+  ticketCode         String?   @unique
+  attendanceStatus   String    @default("not_checked_in")
+  status             String    @default("active")
+  canceledAt         DateTime?
 
+  // Dynamic form answers
+  userData Json
+
+  // Gender for registration counts
+  gender String? // "Male", "Female", "Other" - extracted from userData or user profile
+
+  paymentStatus    String    @default("pending") // "pending", "paid", "rejected"
+  transactionId    String?
+  paymentSs        String? // URL to uploaded screenshot
+  paymentProvider  String    @default("manual")
+  paymentReference String?
+  paymentMetadata  Json?
+  rejectionReason  String?
+  reviewedAt       DateTime?
+  reviewedBy       User?     @relation("PaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  paymentReviews PaymentReview[]
+  refundRequests RefundRequest[]
+
+  @@index([eventId, userId])
+  @@index([eventId, status, paymentStatus])
+  @@index([userId, createdAt])
   @@map("registrations")
 }
 
 // 5. STATIC CONTENT
 model GalleryCollection {
-  id          String         @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  slug        String         @unique
+  slug        String   @unique
   description String?
   coverImage  String?
-  sortOrder   Int            @default(0)
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  
-  images      GalleryImage[]
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  event       Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  eventId     String?
+
+  images GalleryImage[]
 
   @@map("gallery_collections")
 }
 
 model GalleryImage {
-  id           String            @id @default(cuid())
-  title        String?
-  description  String?
-  imageUrl     String
-  sortOrder    Int               @default(0)
-  createdAt    DateTime          @default(now())
-  
+  id          String   @id @default(cuid())
+  title       String?
+  description String?
+  imageUrl    String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
   collection   GalleryCollection? @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   collectionId String?
 
   @@map("gallery_images")
+}
+
+// 6. MEMBER EXPERIENCE & COMMUNICATIONS
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  type      String
+  title     String
+  message   String
+  href      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  content     String    @db.Text
+  audience    String    @default("all")
+  isActive    Boolean   @default(true)
+  event       Event?    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String?
+  author      User      @relation("AnnouncementAuthor", fields: [authorId], references: [id])
+  authorId    String
+  publishedAt DateTime  @default(now())
+  expiresAt   DateTime?
+
+  @@index([isActive, publishedAt])
+  @@index([eventId])
+  @@map("announcements")
+}
+
+model EventBookmark {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+  @@map("event_bookmarks")
+}
+
+model EventWaitlist {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  event           Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId         String
+  status          String    @default("waiting")
+  position        Int
+  invitedAt       DateTime?
+  inviteExpiresAt DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, eventId])
+  @@index([eventId, status, position])
+  @@map("event_waitlist")
+}
+
+model EventAttendance {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String
+  checkedInAt DateTime @default(now())
+  checkedInBy String?
+
+  @@unique([userId, eventId])
+  @@index([eventId, checkedInAt])
+  @@map("event_attendance")
+}
+
+model EventFeedback {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  rating    Int
+  comments  String?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+  @@map("event_feedback")
+}
+
+model Certificate {
+  id                String   @id @default(cuid())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  event             Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  eventId           String?
+  title             String
+  certificateNumber String   @unique
+  fileUrl           String?
+  issuedAt          DateTime @default(now())
+
+  @@index([userId, issuedAt])
+  @@map("certificates")
+}
+
+// 7. GRADUATE COMMUNITY
+model Opportunity {
+  id               String    @id @default(cuid())
+  title            String
+  type             String
+  organization     String?
+  description      String    @db.Text
+  location         String?
+  applyUrl         String?
+  contactEmail     String?
+  expiresAt        DateTime?
+  isApproved       Boolean   @default(false)
+  moderationStatus String    @default("pending")
+  moderationReason String?
+  reviewedAt       DateTime?
+  creator          User      @relation("OpportunityCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId        String
+  createdAt        DateTime  @default(now())
+
+  @@index([isApproved, type, createdAt])
+  @@map("opportunities")
+}
+
+model Mentorship {
+  id        String   @id @default(cuid())
+  mentor    User     @relation("Mentor", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentorId  String
+  mentee    User     @relation("Mentee", fields: [menteeId], references: [id], onDelete: Cascade)
+  menteeId  String
+  topic     String
+  message   String?
+  status    String   @default("requested")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([mentorId, menteeId, topic])
+  @@index([mentorId, status])
+  @@index([menteeId, status])
+  @@map("mentorships")
+}
+
+model BusinessProfile {
+  id               String    @id @default(cuid())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String    @unique
+  name             String
+  category         String
+  description      String?
+  phone            String?
+  email            String?
+  website          String?
+  address          String?
+  logoUrl          String?
+  isApproved       Boolean   @default(false)
+  moderationStatus String    @default("pending")
+  moderationReason String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([isApproved, category])
+  @@map("business_profiles")
+}
+
+model VolunteerOpportunity {
+  id           String                 @id @default(cuid())
+  title        String
+  description  String                 @db.Text
+  eventDate    DateTime?
+  location     String?
+  capacity     Int?
+  isActive     Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  applications VolunteerApplication[]
+
+  @@index([isActive, eventDate])
+  @@map("volunteer_opportunities")
+}
+
+model VolunteerApplication {
+  id            String               @id @default(cuid())
+  opportunity   VolunteerOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  opportunityId String
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  message       String?
+  status        String               @default("applied")
+  hoursLogged   Decimal?             @db.Decimal(6, 2)
+  createdAt     DateTime             @default(now())
+
+  @@unique([opportunityId, userId])
+  @@map("volunteer_applications")
+}
+
+// 8. TOURNAMENT OPERATIONS
+model TournamentMatch {
+  id            String           @id @default(cuid())
+  tournament    TournamentMaster @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournamentId  String
+  homeTeam      Team             @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  homeTeamId    String
+  awayTeam      Team             @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  awayTeamId    String
+  winningTeam   Team?            @relation("WinningTeam", fields: [winningTeamId], references: [id], onDelete: SetNull)
+  winningTeamId String?
+  scheduledAt   DateTime?
+  venue         String?
+  status        String           @default("scheduled")
+  homeScore     String?
+  awayScore     String?
+  resultNote    String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([tournamentId, scheduledAt])
+  @@map("tournament_matches")
+}
+
+model SportStatDefinition {
+  id        String   @id @default(cuid())
+  sport     Sport    @relation(fields: [sportId], references: [id], onDelete: Cascade)
+  sportId   String
+  key       String
+  label     String
+  valueType String   @default("number")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([sportId, key])
+  @@map("sport_stat_definitions")
+}
+
+model RateLimitBucket {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([updatedAt])
+  @@map("rate_limit_buckets")
+}
+
+// Event-scoped least-privilege role. A reviewer can decide payments only for
+// the assigned event; they cannot edit the event or access unrelated finances.
+model EventFinanceAssignment {
+  id           String   @id @default(cuid())
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId      String
+  reviewer     User     @relation("FinanceReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewerId   String
+  assignedBy   User     @relation("FinanceAssigner", fields: [assignedById], references: [id], onDelete: Restrict)
+  assignedById String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@unique([eventId, reviewerId])
+  @@index([reviewerId, isActive])
+  @@map("event_finance_assignments")
+}
+
+model PaymentReview {
+  id             String       @id @default(cuid())
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  registrationId String
+  actor          User         @relation("PaymentReviewActor", fields: [actorId], references: [id], onDelete: Restrict)
+  actorId        String
+  fromStatus     String
+  toStatus       String
+  reason         String?
+  createdAt      DateTime     @default(now())
+
+  @@index([registrationId, createdAt])
+  @@map("payment_reviews")
+}
+
+model RefundRequest {
+  id             String       @id @default(cuid())
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  registrationId String
+  status         String       @default("pending")
+  amount         Int?
+  reason         String?
+  reference      String?
+  reviewedBy     User?        @relation("RefundReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedById   String?
+  requestedAt    DateTime     @default(now())
+  reviewedAt     DateTime?
+  completedAt    DateTime?
+
+  @@index([status, requestedAt])
+  @@map("refund_requests")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}
+
+model MemberBlock {
+  id        String   @id @default(cuid())
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockerId String
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  blockedId String
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+  @@map("member_blocks")
+}
+
+model CommunityReport {
+  id            String   @id @default(cuid())
+  reporter      User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporterId    String
+  subjectUser   User     @relation("ReportedMember", fields: [subjectUserId], references: [id], onDelete: Cascade)
+  subjectUserId String
+  category      String
+  details       String?
+  status        String   @default("open")
+  createdAt     DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([subjectUserId, createdAt])
+  @@map("community_reports")
 }

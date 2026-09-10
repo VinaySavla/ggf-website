@@ -1,4 +1,4 @@
-# Godhara Graduates Forum
+# Godhra Graduates Forum
 
 A modern, full-featured community management platform for Godhra Graduates Forum (GGF) - organizing educational, sports, and fellowship events in collaboration with Godhra Sports Club.
 
@@ -8,8 +8,10 @@ A modern, full-featured community management platform for Godhra Graduates Forum
 - **Homepage**: Hero section, featured events, about GGF, statistics showcase
 - **Events**: Browse all events, detailed event pages with custom registration forms
 - **Gallery**: Photo collections organized by events/occasions
-- **User Profiles**: Personal dashboard with registration history
-- **Authentication**: Email/password login with password reset functionality
+- **Member Workspace**: Dashboard, saved events, registration receipts/tickets, attendance, certificates and notifications
+- **Community**: Opt-in directory, opportunities, mentorship, business directory and volunteering
+- **Events**: Search/filter plus card and calendar views, waitlists, cancellations and feedback
+- **Authentication**: Password or one-time email-code login, password reset, inactive-account enforcement and throttling
 
 ### Admin Panel
 - **Dashboard**: Overview statistics (users, events, registrations)
@@ -20,14 +22,16 @@ A modern, full-featured community management platform for Godhra Graduates Forum
 - **Gallery Management**: Create collections, upload/manage photos (Super Admin)
 - **User Stats**: Track and record player statistics (Super Admin)
 - **Sports Management**: Manage sports categories (Super Admin)
-- **Role-Based Access**: Super Admin and Organizer roles with different permissions
+- **Role-Based Access**: Member, event organizer, event-scoped finance reviewer and super-admin permissions
+- **Community Operations**: Announcements, event reminders, QR check-in, certificates and volunteer review
+- **Tournament Operations**: Teams, rosters, fixtures, results, standings and configurable stat definitions
 
 ### Key Capabilities
 - **Custom Form Builder**: Dynamic registration forms with mandatory fields (name, email, mobile, gender, profile image)
-- **Payment Integration**: UPI QR code support with payment proof upload
+- **Manual Payments**: UPI details, proof upload, explicit review status/rejection reason and provider-neutral metadata for a future gateway
 - **Registration Limits**: Gender-based or common registration caps
 - **Rich Text Editor**: WYSIWYG event descriptions
-- **File Uploads**: Profile photos, payment proofs, team logos, gallery images
+- **File Uploads**: Signature-validated files stored outside the public web root and served through access checks
 - **Responsive Design**: Mobile-first, fully responsive across all devices
 
 ## 🛠️ Tech Stack
@@ -67,20 +71,24 @@ A modern, full-featured community management platform for Godhra Graduates Forum
    # Auth.js
    AUTH_SECRET="your-auth-secret-here"
    
-   # Email (for password reset)
-   EMAIL_SERVER_HOST="smtp.gmail.com"
-   EMAIL_SERVER_PORT=587
-   EMAIL_SERVER_USER="your-email@gmail.com"
-   EMAIL_SERVER_PASSWORD="your-app-password"
-   EMAIL_FROM="GGF <noreply@ggfgodhra.com>"
+   # Email
+   SMTP_HOST="smtp.gmail.com"
+   SMTP_PORT="587"
+   SMTP_USER="your-email@gmail.com"
+   SMTP_PASS="your-app-password"
+   SMTP_FROM_EMAIL="GGF <noreply@ggfgodhra.com>"
    
    # App URL
    NEXT_PUBLIC_APP_URL="http://localhost:3000"
+   PAYMENT_PROVIDER="manual"
+   FILE_STORAGE_PROVIDER="local"
+   UPLOAD_DIR="./storage"
+   SUPER_ADMIN_PASSWORD="use-a-long-unique-secret-for-initial-seeding"
    ```
 
 3. **Set up the database**
    ```bash
-   npm run db:push    # Push schema to database
+   npm run db:migrate # Apply development migrations
    npm run db:seed    # Seed initial data (optional)
    ```
 
@@ -152,8 +160,7 @@ ggf-website/
 ├── prisma/
 │   ├── schema.prisma               # Database schema
 │   └── seed.js                     # Database seeder
-└── public/
-    └── uploads/                    # Uploaded files
+└── storage/                        # Runtime upload volume (not committed or public)
 ```
 
 ## 🎨 Design System
@@ -168,7 +175,7 @@ ggf-website/
 ## 📊 Database Schema (Key Models)
 
 ### User & Authentication
-- **User**: id, name, email, password, role (USER/ORGANIZER/SUPER_ADMIN), mobile, village, gender
+- **User**: id, name, email, password, role (USER/ORGANIZER/FINANCE_REVIEWER/SUPER_ADMIN), mobile, village, gender
 - **MasterPlayer**: User profile with playerId (YYYYMMDDhhmm0001 format), bio, photo, stats
 
 ### Events & Registrations
@@ -186,19 +193,15 @@ ggf-website/
 
 ## 👥 User Roles
 
-| Feature | User | Organizer | Super Admin |
-|---------|------|-----------|-------------|
-| View Events | ✅ | ✅ | ✅ |
-| Register for Events | ✅ | ✅ | ✅ |
-| View Own Profile | ✅ | ✅ | ✅ |
-| Admin Dashboard | ❌ | ✅ | ✅ |
-| Manage Own Events | ❌ | ✅ | ✅ |
-| Manage All Events | ❌ | ❌ | ✅ |
-| View All Users | ❌ | ❌ | ✅ |
-| Manage Gallery | ❌ | ❌ | ✅ |
-| User Stats | ❌ | ❌ | ✅ |
-| Create Organizers | ❌ | ❌ | ✅ |
-| Site Settings | ❌ | ❌ | ✅ |
+| Feature | Member | Finance reviewer | Organizer | Super Admin |
+|---------|--------|------------------|-----------|-------------|
+| Use portal and register | ✅ | ✅ | ✅ | ✅ |
+| View own unified profile | ✅ | ✅ | ✅ | ✅ |
+| Review assigned-event payments/refunds | ❌ | ✅ | ✅ (own events) | ✅ |
+| Edit events | ❌ | ❌ | ✅ (own events) | ✅ |
+| Manage users, gallery and settings | ❌ | ❌ | ❌ | ✅ |
+
+`FINANCE_REVIEWER` is assigned automatically when an organizer grants an active member finance access on an event. It is deliberately event-scoped: the reviewer sees only registrations and refunds for assigned events and cannot edit an event. Removing their final assignment returns an ordinary member to the `USER` role.
 
 ## 📝 Scripts
 
@@ -207,6 +210,7 @@ npm run dev        # Start development server
 npm run build      # Build for production
 npm start          # Start production server
 npm run lint       # Run ESLint
+npm test           # Run security and policy tests
 npm run db:push    # Push Prisma schema to database
 npm run db:migrate # Run database migrations
 npm run db:seed    # Seed database
@@ -214,6 +218,8 @@ npm run db:studio  # Open Prisma Studio
 ```
 
 ## 🚀 Deployment
+
+Apply checked-in migrations with `npx prisma migrate deploy` before starting the new application version. Back up the database first and do not use `db:push` for production releases. Mount `UPLOAD_DIR` as persistent storage; for more than one application instance, point the same storage boundary at a shared/object-storage adapter before scaling horizontally.
 
 ### Vercel (Recommended)
 1. Push code to GitHub

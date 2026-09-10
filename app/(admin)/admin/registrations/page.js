@@ -12,25 +12,22 @@ export const metadata = {
   title: "Registrations - GGF Admin",
 };
 
-async function getRegistrations(userId, role, status) {
+async function getRegistrations(userId, role, status, page) {
   const isAdmin = role === "SUPER_ADMIN";
   
   const where = {
     ...(status && status !== "all" ? { paymentStatus: status } : {}),
-    ...(isAdmin ? {} : { event: { tournament: { organizerId: userId } } }),
+    ...(isAdmin ? {} : { event: { OR: [{ organizerId: userId }, { tournament: { organizerId: userId } }, { financeAssignments: { some: { reviewerId: userId, isActive: true } } }] } }),
   };
 
-  const registrations = await prisma.registration.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    include: {
-      event: true,
-    },
-  });
+  const [registrations, total] = await Promise.all([
+    prisma.registration.findMany({ where, orderBy: { createdAt: "desc" }, include: { event: true }, skip: (page - 1) * 50, take: 50 }),
+    prisma.registration.count({ where }),
+  ]);
 
   // Fetch player profiles for all registrations that have userId
   const userIds = registrations
-    .map(r => r.userData?.userId)
+    .map(r => r.userId || r.userData?.userId)
     .filter(Boolean);
 
   const playerProfiles = await prisma.masterPlayer.findMany({
@@ -45,19 +42,21 @@ async function getRegistrations(userId, role, status) {
   });
 
   // Attach playerId to each registration
-  return registrations.map(reg => ({
+  return { total, registrations: registrations.map(reg => ({
     ...reg,
-    playerId: reg.userData?.userId ? playerMap[reg.userData.userId] : null,
-  }));
+    playerId: (reg.userId || reg.userData?.userId) ? playerMap[reg.userId || reg.userData.userId] : null,
+  })) };
 }
 
 export default async function RegistrationsPage({ searchParams }) {
   const session = await auth();
-  const status = searchParams.status || "all";
-  const registrations = await getRegistrations(session.user.id, session.user.role, status);
+  const params = await searchParams;
+  const status = params.status || "all";
+  const page = Math.max(1, Number(params.page) || 1);
+  const { registrations, total } = await getRegistrations(session.user.id, session.user.role, status, page);
 
   const statusFilters = [
-    { value: "all", label: "All", count: registrations.length },
+    { value: "all", label: "All" },
     { value: "pending", label: "Pending", color: "yellow" },
     { value: "paid", label: "Paid", color: "green" },
     { value: "rejected", label: "Rejected", color: "red" },
@@ -88,7 +87,7 @@ export default async function RegistrationsPage({ searchParams }) {
       </div>
 
       {registrations.length > 0 ? (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -160,9 +159,9 @@ export default async function RegistrationsPage({ searchParams }) {
                         Paid
                       </span>
                     ) : reg.paymentStatus === "pending" ? (
-                      <span className="flex items-center text-yellow-600 text-sm">
+                      <span className={`flex items-center text-sm ${Date.now() > new Date(reg.createdAt).getTime() + reg.event.paymentReviewHours * 60 * 60 * 1000 ? "text-red-700" : "text-yellow-600"}`}>
                         <Clock className="w-4 h-4 mr-1" />
-                        Pending
+                        {Date.now() > new Date(reg.createdAt).getTime() + reg.event.paymentReviewHours * 60 * 60 * 1000 ? "Review overdue" : "Pending"}
                       </span>
                     ) : (
                       <span className="flex items-center text-red-600 text-sm">
@@ -196,6 +195,7 @@ export default async function RegistrationsPage({ searchParams }) {
           <p className="text-gray-500 text-lg">No registrations found</p>
         </div>
       )}
+      {total > 50 && <nav aria-label="Registration pages" className="flex justify-between mt-5"><Link className={page === 1 ? "invisible" : "text-primary"} href={{ pathname: "/admin/registrations", query: { ...(status !== "all" ? { status } : {}), page: page - 1 } }}>← Previous</Link><span>Page {page} of {Math.ceil(total / 50)}</span><Link className={page * 50 >= total ? "invisible" : "text-primary"} href={{ pathname: "/admin/registrations", query: { ...(status !== "all" ? { status } : {}), page: page + 1 } }}>Next →</Link></nav>}
     </div>
   );
 }

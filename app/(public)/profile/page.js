@@ -41,6 +41,13 @@ export default function ProfilePage() {
     photo: "",
     gender: "",
     village: "",
+    education: "",
+    profession: "",
+    skills: "",
+    interests: "",
+    isDirectoryVisible: false,
+    isMentorAvailable: false,
+    notificationPreferences: { email: true, inApp: true, eventReminders: true, communityUpdates: true },
   });
   
   const [passwordData, setPasswordData] = useState({
@@ -64,7 +71,7 @@ export default function ProfilePage() {
     }
     
     loadProfile();
-  }, [session, status]);
+  }, [session, status, router]);
 
   const loadProfile = async () => {
     try {
@@ -84,6 +91,13 @@ export default function ProfilePage() {
         photo: result.user.photo || "",
         gender: result.user.gender || "",
         village: result.user.village || "",
+        education: result.user.education || "",
+        profession: result.user.profession || "",
+        skills: (result.user.skills || []).join(", "),
+        interests: (result.user.interests || []).join(", "),
+        isDirectoryVisible: result.user.isDirectoryVisible || false,
+        isMentorAvailable: result.user.isMentorAvailable || false,
+        notificationPreferences: result.user.notificationPreferences || { email: true, inApp: true, eventReminders: true, communityUpdates: true },
       });
     } catch (error) {
       toast.error("Failed to load profile");
@@ -159,22 +173,6 @@ export default function ProfilePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate single word per name field
-    if (formData.firstName.trim().split(/\s+/).length > 1) {
-      toast.error("First name should be a single word only");
-      return;
-    }
-
-    if (formData.middleName.trim().split(/\s+/).length > 1) {
-      toast.error("Middle name should be a single word only");
-      return;
-    }
-
-    if (formData.surname.trim().split(/\s+/).length > 1) {
-      toast.error("Surname should be a single word only");
-      return;
-    }
-    
     setSaving(true);
 
     try {
@@ -187,6 +185,13 @@ export default function ProfilePage() {
         bio: formData.bio,
         gender: formData.gender,
         village: formData.village,
+        education: formData.education,
+        profession: formData.profession,
+        skills: formData.skills.split(",").map(value => value.trim()).filter(Boolean),
+        interests: formData.interests.split(",").map(value => value.trim()).filter(Boolean),
+        isDirectoryVisible: formData.isDirectoryVisible,
+        isMentorAvailable: formData.isMentorAvailable,
+        notificationPreferences: formData.notificationPreferences,
       });
 
       if (result.error) {
@@ -217,8 +222,8 @@ export default function ProfilePage() {
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (passwordData.newPassword.length < 8 || !/[A-Za-z]/.test(passwordData.newPassword) || !/\d/.test(passwordData.newPassword)) {
+      toast.error("Password must be at least 8 characters and include a letter and number");
       return;
     }
 
@@ -319,6 +324,32 @@ export default function ProfilePage() {
           
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Education</label>
+              <input type="text" value={formData.education} onChange={(e) => setFormData({ ...formData, education: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-gray-300" placeholder="Degree or institution" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Profession</label>
+              <input type="text" value={formData.profession} onChange={(e) => setFormData({ ...formData, profession: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-gray-300" placeholder="Your role or profession" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
+              <input type="text" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-gray-300" placeholder="Teaching, Accounting, Cricket (comma separated)" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Interests</label>
+              <input type="text" value={formData.interests} onChange={(e) => setFormData({ ...formData, interests: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-gray-300" placeholder="Mentorship, volunteering (comma separated)" />
+            </div>
+            <label className="flex items-start gap-3 md:col-span-2 bg-primary-50 rounded-lg p-4">
+              <input type="checkbox" checked={formData.isDirectoryVisible} onChange={(e) => setFormData({ ...formData, isDirectoryVisible: e.target.checked })} className="mt-1" />
+              <span><strong>Show me in the member directory</strong><span className="block text-sm text-gray-600">Your name, village, profession, education and skills become visible to the community.</span></span>
+            </label>
+            <label className="flex items-start gap-3 md:col-span-2 border rounded-lg p-4">
+              <input type="checkbox" checked={formData.isMentorAvailable} onChange={(e) => setFormData({ ...formData, isMentorAvailable: e.target.checked })} className="mt-1" />
+              <span><strong>Accept mentorship requests</strong><span className="block text-sm text-gray-600">Members can request guidance only when you explicitly enable this.</span></span>
+            </label>
+            <div className="md:col-span-2 border rounded-lg p-4"><p className="font-semibold mb-3">Notification preferences</p><div className="grid sm:grid-cols-2 gap-3">{[["email","Email notifications"],["inApp","In-app notifications"],["eventReminders","Event reminders"],["communityUpdates","Community updates"]].map(([key,label])=><label key={key} className="flex gap-2"><input type="checkbox" checked={formData.notificationPreferences[key] !== false} onChange={(e)=>setFormData({...formData,notificationPreferences:{...formData.notificationPreferences,[key]:e.target.checked}})}/>{label}</label>)}</div></div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <span className="flex items-center space-x-2">
                   <User className="w-4 h-4" />
@@ -328,16 +359,10 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={formData.firstName}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value.includes(' ')) {
-                    setFormData({ ...formData, firstName: value });
-                  }
-                }}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             <div>
@@ -350,16 +375,10 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={formData.middleName}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value.includes(' ')) {
-                    setFormData({ ...formData, middleName: value });
-                  }
-                }}
+                onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             <div>
@@ -372,16 +391,10 @@ export default function ProfilePage() {
               <input
                 type="text"
                 value={formData.surname}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value.includes(' ')) {
-                    setFormData({ ...formData, surname: value });
-                  }
-                }}
+                onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             <div>
@@ -531,6 +544,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    aria-label={showPasswords.current ? "Hide current password" : "Show current password"}
                   >
                     {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -548,12 +562,13 @@ export default function ProfilePage() {
                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                     className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    aria-label={showPasswords.new ? "Hide new password" : "Show new password"}
                   >
                     {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -571,12 +586,13 @@ export default function ProfilePage() {
                     onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                     className="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
                     required
-                    minLength={6}
+                    minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    aria-label={showPasswords.confirm ? "Hide password confirmation" : "Show password confirmation"}
                   >
                     {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>

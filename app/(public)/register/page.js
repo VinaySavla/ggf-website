@@ -78,22 +78,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate single word per name field
-    if (formData.firstName.trim().split(/\s+/).length > 1) {
-      toast.error("First name should be a single word only");
-      return;
-    }
-
-    if (formData.middleName.trim().split(/\s+/).length > 1) {
-      toast.error("Middle name should be a single word only");
-      return;
-    }
-
-    if (formData.surname.trim().split(/\s+/).length > 1) {
-      toast.error("Surname should be a single word only");
-      return;
-    }
-    
     // Validate mobile number (10 digits only)
     if (!/^\d{10}$/.test(formData.mobile)) {
       toast.error("Mobile number must be exactly 10 digits");
@@ -110,8 +94,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (formData.password.length < 8 || !/[A-Za-z]/.test(formData.password) || !/\d/.test(formData.password)) {
+      toast.error("Password must be at least 8 characters and include a letter and number");
       return;
     }
 
@@ -223,18 +207,11 @@ export default function RegisterPage() {
               <input
                 type="text"
                 value={formData.firstName}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Only allow single word (no spaces)
-                  if (!value.includes(' ')) {
-                    setFormData({ ...formData, firstName: value });
-                  }
-                }}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
                 placeholder="Enter your first name"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             <div>
@@ -244,18 +221,11 @@ export default function RegisterPage() {
               <input
                 type="text"
                 value={formData.middleName}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Only allow single word (no spaces)
-                  if (!value.includes(' ')) {
-                    setFormData({ ...formData, middleName: value });
-                  }
-                }}
+                onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
                 placeholder="Enter your middle name"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
             
@@ -265,18 +235,11 @@ export default function RegisterPage() {
               <input
                 type="text"
                 value={formData.surname}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Only allow single word (no spaces)
-                  if (!value.includes(' ')) {
-                    setFormData({ ...formData, surname: value });
-                  }
-                }}
+                onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
                 placeholder="Enter your surname"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Single word only, no spaces</p>
             </div>
 
         
@@ -320,7 +283,8 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">                Village <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Village <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"

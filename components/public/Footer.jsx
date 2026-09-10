@@ -1,102 +1,28 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react";
+import { ArrowRight, Mail, MapPin } from "lucide-react";
+
+const groups = [
+  ["Explore", [["/", "Home"], ["/events", "Events"], ["/gallery", "Gallery"], ["/about", "About GGF"]]],
+  ["Get connected", [["/community", "Community"], ["/directory", "Member directory"], ["/mentorship", "Mentorship"], ["/volunteer", "Volunteer"]]],
+  ["Here to help", [["/governance", "Governance"], ["/contact", "Contact & grievances"], ["/policies/payments", "Payments & refunds"], ["/login", "Member login"]]],
+];
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="bg-gray-900 text-gray-300">
-      <div className="container-custom py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* About Section */}
-          <div className="md:col-span-2">
-            <div className="flex items-center space-x-3 mb-4">
-              <Image 
-                src="/GGF.png" 
-                alt="GGF Logo" 
-                width={40} 
-                height={40}
-                className="object-contain"
-              />
-              <h3 className="text-xl font-bold text-white">Godhra Graduates Forum</h3>
-            </div>
-            <p className="text-sm leading-relaxed mb-4">
-              A community trust dedicated to organizing educational, sports, and fellowship events.
-              Building community through education, sports, and togetherness.
-            </p>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-400">In collaboration with</span>
-              <Image 
-                src="/GCS.png" 
-                alt="GSC Logo" 
-                width={30} 
-                height={30}
-                className="object-contain"
-              />
-              <span className="text-xs text-gray-400">Godhra Sports Club</span>
-            </div>
-          </div>
-
-          {/* Quick Links */}
+    <footer className="border-t border-primary/10 bg-[#faf8fc] text-gray-600">
+      <div className="container-custom">
+        <div className="grid gap-10 py-12 lg:grid-cols-[1.2fr_2fr] lg:gap-16 lg:py-16">
           <div>
-            <h3 className="text-lg font-bold text-white mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/" className="hover:text-primary transition">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/events" className="hover:text-primary transition">
-                  Events
-                </Link>
-              </li>
-              <li>
-                <Link href="/gallery" className="hover:text-primary transition">
-                  Gallery
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-primary transition">
-                  About Us
-                </Link>
-              </li>
-            </ul>
+            <Link href="/" className="inline-flex items-center gap-3"><Image src="/GGF.png" alt="" width={52} height={52}/><span className="text-base font-semibold leading-6 text-primary-900">Godhra Graduates<span className="block">Forum</span></span></Link>
+            <p className="mt-5 max-w-sm text-sm leading-7">Connected by our roots.<br/>Growing through education, sports, and service.</p>
+            <p className="mt-5 flex items-center gap-2 text-xs font-medium text-primary"><MapPin className="h-4 w-4" aria-hidden="true"/>Godhra & beyond</p>
+            <a href="mailto:godharagraduatesforum@gmail.com" className="mt-3 inline-flex min-h-11 max-w-full items-center gap-2 text-sm hover:text-primary"><Mail className="h-4 w-4 shrink-0" aria-hidden="true"/><span className="break-all">godharagraduatesforum@gmail.com</span></a>
           </div>
-
-          {/* Contact Info */}
-          <div>
-            <h3 className="text-lg font-bold text-white mb-4">Contact Us</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-primary" />
-                <span>godharagraduatesforum@gmail.com</span>
-              </li>
-            </ul>
-            
-            {/* Social Links */}
-            <div className="flex space-x-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-primary transition">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-primary transition">
-                <Instagram className="w-5 h-5" />
-              </a>
-              {/* <a href="#" className="text-gray-400 hover:text-primary transition">
-                <Twitter className="w-5 h-5" />
-              </a> */}
-              <a href="#" className="text-gray-400 hover:text-red-500 transition">
-                <Youtube className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3">{groups.map(([title, links]) => <nav key={title} aria-label={title}><h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary-900">{title}</h2><ul>{links.map(([href, label]) => <li key={href}><Link href={href} className="inline-flex min-h-11 items-center text-sm transition-colors hover:text-primary hover:underline underline-offset-4">{label}</Link></li>)}</ul></nav>)}</div>
         </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-          <p>© {currentYear} Godhra Graduates Forum. All rights reserved.</p>
-        </div>
+        <div className="flex flex-col gap-5 border-y border-primary/10 py-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><Image src="/GCS.png" alt="Godhra Sports Club logo" width={36} height={36} className="object-contain"/><p className="text-xs leading-5">In collaboration with<br/><span className="font-semibold text-primary-900">Godhra Sports Club</span></p></div><Link href="/contact" className="inline-flex min-h-11 items-center gap-3 text-sm font-medium text-primary">Let’s build something together <ArrowRight className="h-4 w-4" aria-hidden="true"/></Link></div>
+        <div className="flex flex-col gap-3 py-6 text-xs sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} Godhra Graduates Forum. All rights reserved.</p><div className="flex gap-6"><Link href="/policies/privacy" className="py-2 hover:text-primary hover:underline">Privacy policy</Link><Link href="/policies/terms" className="py-2 hover:text-primary hover:underline">Terms of use</Link></div></div>
       </div>
     </footer>
   );

@@ -42,7 +42,7 @@ export default function AboutSection() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300 text-center"
+              className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm text-left"
             >
               <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary-50 text-primary mb-4">
                 <feature.icon className="w-7 h-7" />

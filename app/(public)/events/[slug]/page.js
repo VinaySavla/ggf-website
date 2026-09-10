@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 import { auth } from "@/lib/auth";
 import RegistrationForm from "@/components/public/RegistrationForm";
+import { sanitizeRichText } from "@/lib/sanitize";
+import { BookmarkButton, WaitlistButton } from "@/components/public/EventMemberActions";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -22,11 +24,14 @@ async function getEvent(slug) {
       where: { slug },
       include: {
         registrations: {
+          where: { status: "active" },
           select: { gender: true },
         },
         sports: {
           include: { sport: true },
         },
+        tournament: { select: { id: true } },
+        galleryCollections: { where: { isActive: true }, select: { slug: true, name: true, coverImage: true }, take: 3 },
       },
     });
     return event;
@@ -42,7 +47,9 @@ async function checkExistingRegistration(eventId, userId, userEmail) {
   const existing = await prisma.registration.findFirst({
     where: {
       eventId,
+      status: "active",
       OR: [
+        { userId },
         { userData: { path: ["userId"], equals: userId } },
         { userData: { path: ["email"], equals: userEmail } },
       ],
@@ -68,6 +75,7 @@ export default async function EventDetailPage({ params }) {
   const isAlreadyRegistered = session 
     ? await checkExistingRegistration(event.id, session.user.id, session.user.email)
     : false;
+  const bookmark = session ? await prisma.eventBookmark.findUnique({ where: { userId_eventId: { userId: session.user.id, eventId: event.id } } }) : null;
 
   // Check registration window
   const registrationNotStarted = event.registrationStartDate && new Date(event.registrationStartDate) > now;
@@ -77,6 +85,7 @@ export default async function EventDetailPage({ params }) {
   const totalRegistrations = event.registrations.length;
   const maleRegistrations = event.registrations.filter(r => r.gender === "Male").length;
   const femaleRegistrations = event.registrations.filter(r => r.gender === "Female").length;
+  const otherRegistrations = event.registrations.filter(r => r.gender === "Other").length;
 
   // Check if registration limit is reached
   let limitReached = false;
@@ -97,6 +106,10 @@ export default async function EventDetailPage({ params }) {
       limitReached = true;
       limitMessage = "Female registration limit has been reached";
     }
+    if (userGender === "Other" && event.maxOtherRegistrations && otherRegistrations >= event.maxOtherRegistrations) {
+      limitReached = true;
+      limitMessage = "Other-gender registration limit has been reached";
+    }
   }
 
   const canRegister = !isPast && !registrationNotStarted && !registrationClosed && !limitReached && !isAlreadyRegistered;
@@ -107,6 +120,7 @@ export default async function EventDetailPage({ params }) {
         <div className="max-w-4xl mx-auto">
           {/* Event Header */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-8">
+            {session && <div className="flex justify-end mb-4"><BookmarkButton eventId={event.id} initial={Boolean(bookmark)} /></div>}
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
@@ -138,7 +152,7 @@ export default async function EventDetailPage({ params }) {
             {event.description && (
               <div 
                 className="text-gray-600 mb-6 prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: event.description }}
+                dangerouslySetInnerHTML={{ __html: sanitizeRichText(event.description) }}
               />
             )}
 
@@ -148,7 +162,7 @@ export default async function EventDetailPage({ params }) {
                 <h3 className="font-semibold text-blue-800 mb-2">Eligibility Criteria</h3>
                 <div 
                   className="text-blue-700 prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{ __html: event.eligibility }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(event.eligibility) }}
                 />
               </div>
             )}
@@ -200,7 +214,7 @@ export default async function EventDetailPage({ params }) {
 
             {/* Separate Gender Counts */}
             {event.registrationCountType === "separate" && (
-              <div className="mt-4 pt-4 border-t border-gray-200 grid grid-cols-2 gap-4 text-sm">
+              <div className="mt-4 pt-4 border-t border-gray-200 grid sm:grid-cols-3 gap-4 text-sm">
                 <div className="bg-blue-50 rounded-lg p-3">
                   <span className="text-blue-800 font-medium">Male:</span>{" "}
                   {maleRegistrations}
@@ -211,9 +225,15 @@ export default async function EventDetailPage({ params }) {
                   {femaleRegistrations}
                   {event.maxFemaleRegistrations && <span className="text-pink-600"> / {event.maxFemaleRegistrations}</span>}
                 </div>
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <span className="text-purple-800 font-medium">Other:</span>{" "}{otherRegistrations}
+                  {event.maxOtherRegistrations && <span className="text-purple-600"> / {event.maxOtherRegistrations}</span>}
+                </div>
               </div>
             )}
           </div>
+          {event.tournament && <div className="mb-8"><a href={`/tournaments/${event.tournament.id}`} className="block bg-primary text-white rounded-xl p-5 text-center font-semibold">View teams, fixtures, results and standings →</a></div>}
+          {event.galleryCollections.length > 0 && <div className="mb-8 bg-white border rounded-xl p-6"><h2 className="text-xl font-bold mb-3">Event gallery</h2><div className="flex flex-wrap gap-3">{event.galleryCollections.map(collection=><a key={collection.slug} href={`/gallery/${collection.slug}`} className="text-primary font-medium">{collection.name} →</a>)}</div></div>}
 
           {/* Registration Form or Status Messages */}
           {isAlreadyRegistered ? (
@@ -253,6 +273,7 @@ export default async function EventDetailPage({ params }) {
                 Registration Full
               </h2>
               <p className="text-gray-600">{limitMessage}</p>
+              {session && <div className="mt-4"><WaitlistButton eventId={event.id}/></div>}
             </div>
           ) : isPast ? (
             <div className="bg-gray-50 rounded-xl p-8 text-center">

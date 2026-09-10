@@ -31,6 +31,8 @@ async function generatePlayerId() {
 // Get all players
 export async function getPlayers() {
   try {
+    const session = await auth();
+    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) return { error: "Unauthorized" };
     const players = await prisma.masterPlayer.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -56,7 +58,7 @@ export async function getPlayers() {
 export async function createPlayer(data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -109,7 +111,7 @@ export async function createPlayer(data) {
 export async function updatePlayer(id, data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -179,6 +181,8 @@ export async function deletePlayer(id) {
 // Get users without member profiles (for linking)
 export async function getUsersWithoutPlayers() {
   try {
+    const session = await auth();
+    if (!session || session.user.role !== "SUPER_ADMIN") return { error: "Unauthorized" };
     const users = await prisma.user.findMany({
       where: {
         userProfile: null,
@@ -204,7 +208,7 @@ export async function getUsersWithoutPlayers() {
 export async function linkPlayerToUser(playerId, userId) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -233,7 +237,7 @@ export async function linkPlayerToUser(playerId, userId) {
 export async function createPlayerWithAccount(data) {
   try {
     const session = await auth();
-    if (!session || !["SUPER_ADMIN", "ORGANIZER"].includes(session.user.role)) {
+    if (!session || session.user.role !== "SUPER_ADMIN") {
       return { error: "Unauthorized" };
     }
 
@@ -275,7 +279,7 @@ export async function createPlayerWithAccount(data) {
           mobile,
           password: hashedPassword,
           photo,
-          role: "PLAYER",
+          role: "USER",
         },
       });
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserPlus, Trash2, Loader2, Search, User } from "lucide-react";
 import { addPlayerToTeam, removePlayerFromTeam } from "@/actions/team.actions";
+import Image from "next/image";
 
 export default function RosterManager({ team, availablePlayers, userRole }) {
   const router = useRouter();
@@ -124,9 +125,11 @@ export default function RosterManager({ team, availablePlayers, userRole }) {
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                           {roster.player.photo ? (
-                            <img
+                            <Image
                               src={roster.player.photo}
                               alt={roster.player.name}
+                              width={40}
+                              height={40}
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -219,7 +222,7 @@ export default function RosterManager({ team, availablePlayers, userRole }) {
                     >
                       <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                         {player.photo ? (
-                          <img src={player.photo} alt={getPlayerName(player)} className="w-full h-full object-cover" />
+                          <Image src={player.photo} alt={getPlayerName(player)} width={32} height={32} className="w-full h-full object-cover" />
                         ) : (
                           <User className="w-4 h-4 text-gray-500" />
                         )}

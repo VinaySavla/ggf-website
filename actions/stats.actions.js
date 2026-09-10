@@ -4,6 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
+async function canManageStats(session, tournamentId) {
+  if (session.user.role === "SUPER_ADMIN") return true;
+  if (!tournamentId) return false;
+  const tournament = await prisma.tournamentMaster.findFirst({ where: { id: tournamentId, organizerId: session.user.id }, select: { id: true } });
+  return Boolean(tournament);
+}
+
 // ==================== SPORTS ====================
 
 export async function getSports() {
@@ -134,6 +141,7 @@ export async function createPlayerStats(data) {
     }
 
     const { playerId, tournamentId, sportId, statsJson, label } = data;
+    if (!(await canManageStats(session, tournamentId))) return { error: "You can only manage statistics for your tournaments" };
 
     // Check if stats already exist for this player (either for tournament or general)
     const whereClause = {
@@ -185,6 +193,8 @@ export async function updatePlayerStats(id, data) {
     }
 
     const { statsJson } = data;
+    const existingRecord = await prisma.playerStatsRecord.findUnique({ where: { id }, select: { tournamentId: true } });
+    if (!existingRecord || !(await canManageStats(session, existingRecord.tournamentId))) return { error: "Unauthorized" };
 
     const stats = await prisma.playerStatsRecord.update({
       where: { id },
@@ -206,6 +216,8 @@ export async function deletePlayerStats(id) {
       return { error: "Unauthorized" };
     }
 
+    const existingRecord = await prisma.playerStatsRecord.findUnique({ where: { id }, select: { tournamentId: true } });
+    if (!existingRecord || !(await canManageStats(session, existingRecord.tournamentId))) return { error: "Unauthorized" };
     await prisma.playerStatsRecord.delete({
       where: { id },
     });
@@ -364,6 +376,7 @@ export async function bulkCreateStats(data) {
     }
 
     const { tournamentId, sportId, playerStats, label } = data;
+    if (!(await canManageStats(session, tournamentId))) return { error: "You can only manage statistics for your tournaments" };
 
     // playerStats is an array of { playerId, statsJson }
     const createPromises = playerStats.map(async (ps) => {

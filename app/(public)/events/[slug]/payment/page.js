@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import PaymentProofForm from "@/components/public/PaymentProofForm";
+import { auth } from "@/lib/auth";
 
 export const metadata = {
   title: "Payment - GGF Community Portal",
@@ -13,7 +14,7 @@ async function getRegistration(registrationId) {
     const registration = await prisma.registration.findUnique({
       where: { id: registrationId },
       include: {
-        event: true,
+        event: { include: { organizer: { select: { email: true, mobile: true } } } },
       },
     });
     return registration;
@@ -24,6 +25,8 @@ async function getRegistration(registrationId) {
 }
 
 export default async function PaymentPage({ params, searchParams }) {
+  const session = await auth();
+  if (!session) redirect(`/login?callbackUrl=/events/${(await params).slug}/payment`);
   const { slug } = await params;
   const { registrationId } = await searchParams;
 
@@ -36,6 +39,7 @@ export default async function PaymentPage({ params, searchParams }) {
   if (!registration || registration.event.slug !== slug) {
     notFound();
   }
+  if (registration.userId !== session.user.id && registration.userData?.userId !== session.user.id) notFound();
 
   if (!registration.event.isPaid) {
     redirect(`/events/${slug}`);
@@ -70,6 +74,9 @@ export default async function PaymentPage({ params, searchParams }) {
             <p className="text-gray-600 mb-6">
               Please complete the payment for <strong>{registration.event.title}</strong>
             </p>
+            <dl className="grid grid-cols-2 gap-3 bg-primary-50 rounded-lg p-4 mb-6 text-sm"><div><dt className="text-gray-500">Amount</dt><dd className="font-bold text-lg">₹{registration.event.paymentAmount ?? "Confirm with organizer"}</dd></div><div><dt className="text-gray-500">UPI ID</dt><dd className="font-semibold break-all">{registration.event.upiId || "Use the QR code"}</dd></div><div><dt className="text-gray-500">Review time</dt><dd>Within {registration.event.paymentReviewHours} hours</dd></div><div><dt className="text-gray-500">Need help?</dt><dd>{registration.event.organizer?.email || registration.event.organizer?.mobile || "Contact GGF"}</dd></div></dl>
+            {registration.event.paymentInstructions && <div className="border rounded-lg p-4 mb-4"><h2 className="font-semibold">Payment instructions</h2><p className="text-sm text-gray-600 whitespace-pre-wrap mt-1">{registration.event.paymentInstructions}</p></div>}
+            {registration.event.refundPolicy && <details className="border rounded-lg p-4 mb-6"><summary className="font-semibold cursor-pointer">Cancellation and refund policy</summary><p className="text-sm text-gray-600 whitespace-pre-wrap mt-2">{registration.event.refundPolicy}</p></details>}
 
             {/* UPI QR Code */}
             {registration.event.upiQrImage && (

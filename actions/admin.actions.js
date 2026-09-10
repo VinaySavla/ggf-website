@@ -101,7 +101,9 @@ export async function updateOrganizer(id, data) {
     }
 
     const updateData = {
-      name: data.name,
+      firstName: data.firstName,
+      middleName: data.middleName,
+      surname: data.surname,
       email: data.email,
       mobile: data.mobile || null,
     };
@@ -187,9 +189,11 @@ export async function deletePlayer(id) {
     }
 
     // Delete the user (cascades to player profile)
-    await prisma.user.delete({
-      where: { id: player.userId },
-    });
+    if (player.userId) {
+      await prisma.user.delete({ where: { id: player.userId } });
+    } else {
+      await prisma.masterPlayer.delete({ where: { id } });
+    }
 
     return { success: true };
   } catch (error) {
